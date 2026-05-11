@@ -116,6 +116,7 @@ select option{background:var(--bg3)}
   <button class="nav-btn" onclick="showTab('insumos',this)">◈ &nbsp;Insumos</button>
   <button class="nav-btn" onclick="showTab('estadisticas',this)">◉ &nbsp;Estadísticas</button>
   <button class="nav-btn" onclick="showTab('guia',this)">◌ &nbsp;Guía admin</button>
+  <button class="nav-btn" onclick="showTab('exportar',this)">⬍ &nbsp;Exportar / Importar</button>
   <div style="flex:1"></div>
   <div class="sync-bar"><div class="dot warn" id="sdot"></div><span id="slabel">Conectando...</span></div>
 </aside>
@@ -133,6 +134,7 @@ select option{background:var(--bg3)}
     <button class="btn btn-sm" onclick="showTab('productos',this)">Productos</button>
     <button class="btn btn-sm" onclick="showTab('insumos',this)">Insumos</button>
     <button class="btn btn-sm" onclick="showTab('estadisticas',this)">Stats</button>
+    <button class="btn btn-sm" onclick="showTab('exportar',this)">Exportar</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -224,6 +226,37 @@ select option{background:var(--bg3)}
       <div class="row-item"><span style="font-size:13px">+ ganancia deseada (mínimo 30%)</span><span class="tag tag-green">+30%</span></div>
       <div class="row-item"><span style="font-size:13px">= Precio venta almacén</span><span class="tag tag-accent">Precio A</span></div>
       <div class="row-item" style="border-bottom:none"><span style="font-size:13px">Precio venta directa = Precio A × 1.15–1.20</span><span class="tag tag-accent">Precio B</span></div>
+    </div>
+  </div>
+
+  <!-- EXPORTAR / IMPORTAR -->
+  <div id="tab-exportar" class="section">
+    <p class="page-title">Exportar / Importar datos</p>
+
+    <div class="grid2" style="margin-bottom:1.25rem">
+      <div class="card">
+        <div class="card-title">📤 Exportar</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Descargá todos tus datos en un archivo JSON. Sirve como respaldo o para mover los datos a otro dispositivo.</p>
+        <button class="btn btn-primary btn-full" onclick="exportarDatos()">⬇ Descargar backup JSON</button>
+        <div style="margin-top:10px"></div>
+        <button class="btn btn-full" onclick="exportarCSV()">⬇ Descargar ventas en CSV (Excel)</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📥 Importar</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Restaurá un backup JSON previamente exportado. <strong style="color:var(--amber)">Atención:</strong> esto reemplaza todos los datos actuales.</p>
+        <label>Seleccioná el archivo JSON</label>
+        <input type="file" id="import-file" accept=".json" style="margin-bottom:12px">
+        <button class="btn btn-full" style="color:var(--amber);border-color:rgba(232,168,48,.3)" onclick="importarDatos()">⬆ Restaurar desde backup</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Resumen de datos actuales</div>
+      <div class="row-item"><span style="font-size:13px">Clientes registrados</span><span class="row-amount" id="exp-cli">0</span></div>
+      <div class="row-item"><span style="font-size:13px">Ventas registradas</span><span class="row-amount" id="exp-ven">0</span></div>
+      <div class="row-item"><span style="font-size:13px">Insumos registrados</span><span class="row-amount" id="exp-ins">0</span></div>
+      <div class="row-item"><span style="font-size:13px">Productos registrados</span><span class="row-amount" id="exp-pro">0</span></div>
+      <div class="row-item" style="border-bottom:none"><span style="font-size:13px">Última exportación</span><span class="row-amount" id="exp-last" style="font-size:12px;color:var(--text3)">Nunca</span></div>
     </div>
   </div>
 </main>

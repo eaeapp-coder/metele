@@ -684,7 +684,7 @@ function openProductoModal(id=null){
     const p=productos.find(x=>x.id===id);if(!p)return;
     document.getElementById('pr-nom').value=p.nombre||'';
     document.getElementById('pr-emoji').value=p.emoji||'🍕';
-    document.getElementById('pr-desc').value=p.desc||'';
+    document.getElementById("pr-desc").value=p.descripcion||'';
     document.getElementById('pr-palm').value=p.precio_alm||'';
     document.getElementById('pr-pdir').value=p.precio_dir||'';
     document.getElementById('pr-activo').value=p.activo!=null?p.activo:1;
@@ -701,7 +701,7 @@ async function guardarProducto(){
   if(!nom){alert('Ingresá el nombre del producto');return;}
   const editId=document.getElementById('pr-edit-id').value;
   busy('btn-prod',true);
-  const d={nombre:nom,emoji:document.getElementById('pr-emoji').value||'🍕',desc:document.getElementById('pr-desc').value.trim(),precio_alm:parseFloat(document.getElementById('pr-palm').value)||0,precio_dir:parseFloat(document.getElementById('pr-pdir').value)||0,activo:parseInt(document.getElementById('pr-activo').value)};
+  const d={nombre:nom,emoji:document.getElementById('pr-emoji').value||'🍕',desc:document.getElementById("pr-desc").value.trim(),precio_alm:parseFloat(document.getElementById('pr-palm').value)||0,precio_dir:parseFloat(document.getElementById('pr-pdir').value)||0,activo:parseInt(document.getElementById('pr-activo').value)};
   try{
     if(editId&&!editId.startsWith('built')){
       await sPATCH('productos',editId,d);
@@ -738,7 +738,7 @@ function renderProductos(){
         <div style="font-size:24px">${p.emoji||'🍕'}</div>
         <div>
           <div class="row-name">${p.nombre} <span class="tag ${p.activo?'tag-green':'tag-gray'}" style="margin-left:6px">${p.activo?'Activo':'Pausado'}</span></div>
-          <div class="row-sub">${p.desc||''} · Almacén: $${(p.precio_alm||0).toLocaleString('es-AR')} · Directo: $${(p.precio_dir||0).toLocaleString('es-AR')}</div>
+          <div class="row-sub">${p.descripcion||''} · Almacén: $${(p.precio_alm||0).toLocaleString('es-AR')} · Directo: $${(p.precio_dir||0).toLocaleString('es-AR')}</div>
         </div>
       </div>
       <div class="actions-row">
@@ -909,7 +909,7 @@ function buildCharts(){
 
   charts.ventas=new Chart(document.getElementById('chart-ventas'),{type:'bar',data:{labels,datasets:[{label:'Ventas $',data:vxm,backgroundColor:'rgba(232,82,42,0.7)',borderRadius:6}]},options:cOpts});
   charts.gan=new Chart(document.getElementById('chart-gan'),{type:'bar',data:{labels,datasets:[{label:'Ganancia $',data:ganxm,backgroundColor:'rgba(76,175,110,0.7)',borderRadius:6},{label:'Costo $',data:costoxm,backgroundColor:'rgba(232,80,64,0.5)',borderRadius:6}]},options:cOpts});
-  charts.prod=new Chart(document.getElementById('chart-prod'),{type:'doughnut',data:{labels:prodNames.length?prodNames:['Sin datos'],datasets:[{data:prodUnits.length?prodUnits:[1],backgroundColor:['rgba(232,82,42,0.8)','rgba(76,175,110,0.8)','rgba(232,168,48,0.8)','rgba(100,160,240,0.8)','rgba(200,100,200,0.8)']}]},{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c9890',font:{size:11}}}}}});
+  charts.prod=new Chart(document.getElementById('chart-prod'),{type:'doughnut',data:{labels:prodNames.length?prodNames:['Sin datos'],datasets:[{data:prodUnits.length?prodUnits:[1],backgroundColor:['rgba(232,82,42,0.8)','rgba(76,175,110,0.8)','rgba(232,168,48,0.8)','rgba(100,160,240,0.8)','rgba(200,100,200,0.8)']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c9890',font:{size:11}}}}}});
   charts.cli=new Chart(document.getElementById('chart-cli'),{type:'bar',data:{labels:cliSorted.length?cliSorted.map(c=>c[0]):['Sin datos'],datasets:[{label:'Total $',data:cliSorted.length?cliSorted.map(c=>c[1]):[0],backgroundColor:'rgba(232,168,48,0.7)',borderRadius:6}]},options:{...cOpts,indexAxis:'y'}});
 }
 

@@ -162,11 +162,15 @@ select option{background:var(--bg3)}
       <div class="metric"><div class="metric-label">Pedidos del mes</div><div class="metric-value" id="d-ventas">$0</div><div class="metric-sub" id="d-vsub">0 pedidos</div></div>
       <div class="metric"><div class="metric-label">Ganancia</div><div class="metric-value" id="d-gan">$0</div><div class="metric-sub">estimada</div></div>
       <div class="metric"><div class="metric-label">Deuda total</div><div class="metric-value amount-red" id="d-deuda">$0</div><div class="metric-sub" id="d-deuda-sub">de clientes</div></div>
-      <div class="metric"><div class="metric-label">Clientes</div><div class="metric-value" id="d-cli">0</div><div class="metric-sub">registrados</div></div>
+      <div class="metric"><div class="metric-label">Pendientes a entregar</div><div class="metric-value amount-amber" id="d-pendientes">0</div><div class="metric-sub">hoy y próximos días</div></div>
     </div>
     <div class="grid2">
       <div class="card"><div class="card-title">Alertas de deuda</div><div id="d-alertas"><div class="empty"><div class="empty-icon">✓</div>Sin alertas</div></div></div>
       <div class="card"><div class="card-title">Últimos pedidos</div><div id="d-ultimas"><div class="empty"><div class="empty-icon">◌</div>Sin pedidos aún</div></div></div>
+    </div>
+    <div class="card" style="margin-top:1.25rem">
+      <div class="card-title">📦 Entregas pendientes</div>
+      <div id="d-pendientes-list"><div class="empty" style="padding:1.5rem"><div class="empty-icon">✓</div>Sin entregas pendientes</div></div>
     </div>
   </div>
 
@@ -176,7 +180,11 @@ select option{background:var(--bg3)}
       <p class="page-title">Pedidos</p>
       <button class="btn btn-primary" onclick="openPedidoModal()">+ Nuevo pedido</button>
     </div>
-    <div class="card"><div class="card-title">Historial</div><div id="pedidos-list"><div class="empty"><div class="empty-icon">◌</div>Cargando...</div></div></div>
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="card-title">📦 Entregas pendientes por cliente</div>
+      <div id="entregas-pendientes"><div class="empty" style="padding:1.5rem"><div class="empty-icon">✓</div>Sin entregas pendientes</div></div>
+    </div>
+    <div class="card"><div class="card-title">Historial de todos los pedidos</div><div id="pedidos-list"><div class="empty"><div class="empty-icon">◌</div>Cargando...</div></div></div>
   </div>
 
   <!-- DEUDAS -->
@@ -484,7 +492,7 @@ async function init(){
   }
 }
 
-function renderAll(){renderClientes();renderPedidos();renderDeudas();renderInsumos();renderProductos();renderCostos();updateDashboard();updateExportStats();}
+function renderAll(){renderClientes();renderPedidos();renderEntregasPendientes();renderDeudas();renderInsumos();renderProductos();renderCostos();updateDashboard();updateExportStats();}
 function sync(s,t){['sdot','sdot-m'].forEach(id=>{const el=document.getElementById(id);if(el){el.className='dot';if(s==='warn')el.classList.add('warn');else if(s==='off')el.classList.add('off');}});['slabel','slabel-m'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t;});}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
 function busy(id,on,txt){const b=document.getElementById(id);if(!b)return;b.disabled=on;b.innerHTML=on?'<span class="spinner"></span> Guardando...':(txt||'Guardar');}
@@ -653,7 +661,7 @@ async function guardarPedido(){
       toast('✓ Pedido guardado');
     }
     closeModal('m-pedido');
-    renderPedidos();renderDeudas();renderClientes();updateDashboard();
+    renderPedidos();renderEntregasPendientes();renderDeudas();renderClientes();updateDashboard();
   }catch(e){
     toast('⚠ Error: '+e.message);
     console.error(e);
@@ -677,7 +685,7 @@ async function eliminarPedido(id){
       }
       await sbDel('ventas',id);
       ventas=ventas.filter(x=>x.id!==id);
-      renderPedidos();renderDeudas();renderClientes();updateDashboard();
+      renderPedidos();renderEntregasPendientes();renderDeudas();renderClientes();updateDashboard();
       toast('✓ Pedido eliminado');
     }catch(e){toast('⚠ Error');console.error(e);}
   });
@@ -777,14 +785,89 @@ async function confirmarPagoParcial(){
       cli.deuda=nd;
     }
     closeModal('m-pago-parcial');
-    renderPedidos();renderDeudas();renderClientes();updateDashboard();
+    renderPedidos();renderEntregasPendientes();renderDeudas();renderClientes();updateDashboard();
     toast(saldoNuevo<=0?'✓ Pedido saldado completamente':'✓ Pago parcial registrado');
   }catch(e){toast('⚠ Error: '+e.message);console.error(e);}
   finally{busy('btn-pp',false,'Registrar pago');}
 }
 
 // ── DEUDAS ────────────────────────────────────────────────────
+function renderEntregasPendientes(){
+  // Group pending deliveries by client and date
+  const pendientes = ventas.filter(v => {
+    const saldo = (v.total || 0) - (v.pagado || 0);
+    const estado = v.pago === 'pagado' ? 'entregado' : (saldo > 0 ? 'pendiente' : 'entregado');
+    return estado === 'pendiente';
+  });
+
+  // Group by client
+  const byClient = {};
+  pendientes.forEach(v => {
+    const cid = v.cliente_id || 'sin-cliente';
+    if (!byClient[cid]) byClient[cid] = {nombre: v.cliente_nombre || 'Sin cliente', pedidos: [], totalProductos: 0};
+    const items = v.items || [{producto_nombre: v.producto_nombre, cantidad: v.cantidad}];
+    byClient[cid].pedidos.push({fecha: v.fecha, items, total: v.total || 0, pagado: v.pagado || 0});
+    byClient[cid].totalProductos += items.reduce((a, it) => a + (it.cantidad || 0), 0);
+  });
+
+  // Sort by fecha
+  Object.values(byClient).forEach(g => g.pedidos.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || '')));
+
+  const el = document.getElementById('entregas-pendientes');
+  if (!Object.keys(byClient).length) {
+    el.innerHTML = '<div class="empty" style="padding:1.5rem"><div class="empty-icon">✓</div>Sin entregas pendientes</div>';
+    document.getElementById('d-pendientes').textContent = '0';
+    document.getElementById('d-pendientes-list').innerHTML = '<div class="empty" style="padding:1.5rem"><div class="empty-icon">✓</div>Sin entregas pendientes</div>';
+    return;
+  }
+
+  document.getElementById('d-pendientes').textContent = pendientes.length;
+  
+  // Dashboard mini list
+  const dashboardHtml = pendientes.slice(0, 8).map(v => {
+    const items = v.items || [{producto_nombre: v.producto_nombre, cantidad: v.cantidad}];
+    const itemsSummary = items.map(it => `${it.cantidad}x ${it.producto_nombre}`).join(', ');
+    return `<div class="row-item">
+      <div>
+        <div class="row-name" style="font-size:13px">${v.cliente_nombre || ''}</div>
+        <div class="row-sub">${itemsSummary} · ${v.fecha || ''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;color:var(--amber)">Por entregar</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('d-pendientes-list').innerHTML = dashboardHtml || '<div class="empty"><div class="empty-icon">✓</div>Sin entregas pendientes</div>';
+
+  // Full list in Pedidos tab
+  el.innerHTML = Object.values(byClient).sort((a, b) => (a.pedidos[0]?.fecha || '').localeCompare(b.pedidos[0]?.fecha || '')).map(grp => {
+    const pedidosHtml = grp.pedidos.map(p => {
+      const itemsStr = p.items.map(it => `${it.cantidad}x ${it.producto_nombre}`).join(', ');
+      return `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div style="font-weight:500">${itemsStr}</div>
+          <div style="text-align:right;font-size:11px;color:var(--text3)">${p.fecha || 'Sin fecha'}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)">
+          <span>Total: $${(p.total || 0).toLocaleString('es-AR')}</span>
+          <span>Saldo: $${((p.total || 0) - (p.pagado || 0)).toLocaleString('es-AR')}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div style="background:var(--bg3);border-radius:var(--radius-lg);padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-weight:500;font-size:14px">${grp.nombre}</div>
+        <div style="background:var(--accent);color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500">${grp.totalProductos} unidades</div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Primera entrega: ${grp.pedidos[0]?.fecha || 'Sin fecha'}</div>
+      ${pedidosHtml}
+    </div>`;
+  }).join('');
+}
+
 function renderDeudas(){
+
   const filtro=document.getElementById('deuda-filtro')?.value||'todas';
   let pendientes=ventas.filter(v=>{
     const saldo=(v.total||0)-(v.pagado||0);

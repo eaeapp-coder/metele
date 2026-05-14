@@ -742,7 +742,7 @@ async function init(){
   }
 }
 
-function renderAll(){renderClientes();renderPedidos();renderEntregasPendientes();renderDeudas();renderInsumos();renderProductos();renderCostos();updateDashboard();updateExportStats();}
+function renderAll(){renderClientes();renderPedidos();renderEntregasPendientes();renderDeudas();renderInsumos();renderProductos();renderCostos();renderRecetas();updateDashboard();updateExportStats();}
 function sync(s,t){['sdot','sdot-m'].forEach(id=>{const el=document.getElementById(id);if(el){el.className='dot';if(s==='warn')el.classList.add('warn');else if(s==='off')el.classList.add('off');}});['slabel','slabel-m'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t;});}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
 function busy(id,on,txt){const b=document.getElementById(id);if(!b)return;b.disabled=on;b.innerHTML=on?'<span class="spinner"></span> Guardando...':(txt||'Guardar');}

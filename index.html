@@ -109,12 +109,43 @@ select option{background:var(--bg3)}
   .main{margin-left:0;padding:1rem}
   .mobile-header{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;margin:-1rem -1rem 1.25rem}
   .mobile-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:16px}
-  .mobile-nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:.25rem;margin-bottom:1.25rem}
-  .mobile-nav button{white-space:nowrap;font-size:12px;padding:7px 12px}
+  .mobile-nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:.25rem;margin-bottom:1.25rem;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .mobile-nav::-webkit-scrollbar{display:none}
+  .mobile-nav button{white-space:nowrap;font-size:12px;padding:7px 12px;flex-shrink:0}
   .grid4{grid-template-columns:1fr 1fr}
   .grid2{grid-template-columns:1fr}
-  .item-row-grid{grid-template-columns:1fr 70px 90px 32px}
+  .grid3{grid-template-columns:1fr}
+  .item-row-grid{grid-template-columns:1fr 60px 80px 32px;gap:6px}
   .chart-wrap{height:180px}
+  .page-title{font-size:18px}
+  .page-header{flex-direction:row;align-items:center}
+  .metric-value{font-size:20px}
+  .modal{width:100%!important;max-width:100%;margin:0;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;max-height:90vh}
+  .modal-bg{align-items:flex-end;padding:0}
+  .client-card .actions-row{gap:4px}
+  .row-item{flex-wrap:wrap;gap:8px}
+  .actions-row{flex-shrink:0}
+  .deuda-header{flex-wrap:wrap;gap:8px}
+  .deuda-card{padding:.9rem 1rem}
+  .venta-total-bar{flex-wrap:wrap;gap:6px}
+  .row-flex{flex-direction:column;gap:0}
+  .prod-card{flex-wrap:wrap;gap:8px}
+  .sync-bar{display:none}
+  .card{padding:1rem}
+  .btn-full{font-size:13px}
+  /* bigger tap targets */
+  .btn-icon{padding:8px 12px;font-size:15px}
+  .btn-sm{padding:7px 13px}
+  /* fix pedidos row on small screens */
+  #pedidos-list .row-item > div:first-child{min-width:0;flex:1}
+  #pedidos-list .row-item .actions-row{flex-wrap:nowrap}
+  /* deudas wa btn */
+  .btn-sm.btn-green, .btn-sm.btn-amber{font-size:11px;padding:5px 10px}
+}
+@media(max-width:400px){
+  .grid4{grid-template-columns:1fr 1fr}
+  .metric-value{font-size:18px}
+  .item-row-grid{grid-template-columns:1fr 55px 75px 28px}
 }
 </style>
 </head>
@@ -923,7 +954,7 @@ function renderDeudas(){
     const cid=v.cliente_id||'sin-cliente';
     if(!byClient[cid]){
       const cli=clientes.find(c=>c.id===cid);
-      byClient[cid]={nombre:v.cliente_nombre||'Sin cliente',pedidos:[],totalDeuda:0,wa:cli?cli.wa||'':''};
+      byClient[cid]={cid,nombre:v.cliente_nombre||'Sin cliente',pedidos:[],totalDeuda:0,wa:cli?cli.wa||'':''};
     }
     const saldo=(v.total||0)-(v.pagado||0);
     byClient[cid].pedidos.push(v);

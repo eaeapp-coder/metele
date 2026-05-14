@@ -670,6 +670,18 @@ async function guardarPedido(){
   }
 }
 
+async function marcarEntregado(id){
+  const v=ventas.find(x=>x.id===id);
+  if(!v)return;
+  busy('btn-marker-'+id,true);
+  try{
+    await sbPatch('ventas',id,{entregado:true});
+    v.entregado=true;
+    renderPedidos();renderEntregasPendientes();updateDashboard();
+    toast('✓ Pedido marcado como entregado');
+  }catch(e){toast('⚠ Error: '+e.message);console.error(e);}
+}
+
 async function eliminarPedido(id){
   confirmDelete('¿Eliminar este pedido?',async()=>{
     try{
@@ -700,6 +712,11 @@ function getPagoTag(v){
   return '<span class="tag tag-red">Pendiente</span>';
 }
 
+function getEntregaTag(v){
+  if(v.entregado) return '<span class="tag tag-green">Entregado ✓</span>';
+  return '<span class="tag tag-amber">Por entregar</span>';
+}
+
 function renderPedidos(){
   const el=document.getElementById('pedidos-list');
   if(!ventas.length){el.innerHTML='<div class="empty"><div class="empty-icon">◌</div>Sin pedidos registrados</div>';return;}
@@ -708,7 +725,7 @@ function renderPedidos(){
       <div style="flex:1;min-width:0">
         <div class="row-name">${v.cliente_nombre||''}</div>
         <div class="row-sub">${v.producto_nombre||''} · ${v.cantidad||0} unid · ${v.canal==='almacen'?'Almacén':'Directo'} · ${v.fecha||''}</div>
-        <div style="margin-top:4px">${getPagoTag(v)}</div>
+        <div style="margin-top:4px;display:flex;gap:8px">${getPagoTag(v)} ${getEntregaTag(v)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:8px">
         <div style="text-align:right">
@@ -716,6 +733,7 @@ function renderPedidos(){
           ${(v.pagado||0)>0&&v.pago!=='pagado'?`<div style="font-size:11px;color:var(--green)">Cobrado: $${(v.pagado||0).toLocaleString('es-AR')}</div>`:''}
         </div>
         <div class="actions-row">
+          ${!v.entregado?`<button class="btn btn-icon btn-sm btn-green" title="Marcar como entregado" onclick="marcarEntregado('${v.id}')">✔</button>`:''}
           ${v.pago!=='pagado'&&(v.total||0)>(v.pagado||0)?`<button class="btn btn-icon btn-sm btn-green" title="Registrar pago" onclick="abrirPagoParcial('${v.id}')">$</button>`:''}
           <button class="btn btn-icon btn-sm" title="Editar" onclick="openPedidoModal('${v.id}')">✏</button>
           <button class="btn btn-icon btn-sm btn-danger" title="Eliminar" onclick="eliminarPedido('${v.id}')">✕</button>
@@ -793,11 +811,9 @@ async function confirmarPagoParcial(){
 
 // ── DEUDAS ────────────────────────────────────────────────────
 function renderEntregasPendientes(){
-  // Group pending deliveries by client and date
+  // Show only deliveries that haven't been delivered yet (entregado = false)
   const pendientes = ventas.filter(v => {
-    const saldo = (v.total || 0) - (v.pagado || 0);
-    const estado = v.pago === 'pagado' ? 'entregado' : (saldo > 0 ? 'pendiente' : 'entregado');
-    return estado === 'pendiente';
+    return v.entregado !== true; // Show if NOT delivered (false or null)
   });
 
   // Group by client
@@ -1243,6 +1259,7 @@ function updateDashboard(){
   const vm=ventas.filter(v=>{if(!v.fecha)return true;const d=new Date(v.fecha);return d.getMonth()===mes&&d.getFullYear()===anio;});
   const tv=vm.reduce((a,v)=>a+(v.total||0),0);
   const td=ventas.reduce((a,v)=>{const s=(v.total||0)-(v.pagado||0);return a+(s>0?s:0);},0);
+  const pendientesEntrega=ventas.filter(v=>v.entregado!==true).length;
   const gan=vm.reduce((a,v)=>{
     const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad,precio:v.precio}];
     return a+items.reduce((b,it)=>{const co=costoMap[it.producto_id]||{};const ct=((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0);return b+((it.precio||0)*(it.cantidad||0)-ct);},0);
@@ -1252,6 +1269,7 @@ function updateDashboard(){
   document.getElementById('d-gan').textContent='$'+Math.round(gan).toLocaleString('es-AR');
   document.getElementById('d-deuda').textContent='$'+td.toLocaleString('es-AR');
   document.getElementById('d-cli').textContent=clientes.length;
+  document.getElementById('d-pendientes').textContent=pendientesEntrega;
   const al=ventas.filter(v=>(v.total||0)>(v.pagado||0)).reduce((map,v)=>{map[v.cliente_nombre]=(map[v.cliente_nombre]||0)+((v.total||0)-(v.pagado||0));return map;},{});
   const alHtml=Object.entries(al).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,d])=>`<div class="alert-box">💰 <strong>${n}</strong> debe $${d.toLocaleString('es-AR')}</div>`).join('');
   document.getElementById('d-alertas').innerHTML=alHtml||'<div style="font-size:13px;color:var(--green);padding:8px 0">✓ Todos al día</div>';

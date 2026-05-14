@@ -157,7 +157,10 @@ select option{background:var(--bg3)}
 
   <!-- DASHBOARD -->
   <div id="tab-dashboard" class="section visible">
-    <p class="page-title">Panel de control</p>
+    <div class="page-header">
+      <p class="page-title">Panel de control</p>
+      <button class="btn btn-primary" onclick="openPedidoModal()">+ Nuevo pedido</button>
+    </div>
     <div class="grid4" style="margin-bottom:1.25rem">
       <div class="metric"><div class="metric-label">Pedidos del mes</div><div class="metric-value" id="d-ventas">$0</div><div class="metric-sub" id="d-vsub">0 pedidos</div></div>
       <div class="metric"><div class="metric-label">Ganancia</div><div class="metric-value" id="d-gan">$0</div><div class="metric-sub">estimada</div></div>
@@ -917,7 +920,10 @@ function renderDeudas(){
   const byClient={};
   pendientes.forEach(v=>{
     const cid=v.cliente_id||'sin-cliente';
-    if(!byClient[cid])byClient[cid]={nombre:v.cliente_nombre||'Sin cliente',pedidos:[],totalDeuda:0};
+    if(!byClient[cid]){
+      const cli=clientes.find(c=>c.id===cid);
+      byClient[cid]={nombre:v.cliente_nombre||'Sin cliente',pedidos:[],totalDeuda:0,wa:cli?cli.wa||'':''};
+    }
     const saldo=(v.total||0)-(v.pagado||0);
     byClient[cid].pedidos.push(v);
     byClient[cid].totalDeuda+=saldo>0?saldo:0;
@@ -953,9 +959,12 @@ function renderDeudas(){
           <div class="client-avatar" style="width:32px;height:32px;font-size:13px">${(grp.nombre||'?').charAt(0).toUpperCase()}</div>
           <div><div class="row-name">${grp.nombre}</div><div class="row-sub">${grp.pedidos.length} pedido${grp.pedidos.length!==1?'s':''}</div></div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:16px;font-weight:600;color:var(--red)">$${grp.totalDeuda.toLocaleString('es-AR')}</div>
-          <div style="font-size:11px;color:var(--text3)">total pendiente</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <div style="text-align:right">
+            <div style="font-size:16px;font-weight:600;color:var(--red)">$${grp.totalDeuda.toLocaleString('es-AR')}</div>
+            <div style="font-size:11px;color:var(--text3)">total pendiente</div>
+          </div>
+          ${grp.wa ? `<a href="${buildWALink(grp.wa, grp.nombre, grp.totalDeuda)}" target="_blank" class="btn btn-sm btn-green" title="Enviar recordatorio por WhatsApp" style="text-decoration:none;white-space:nowrap">💬 WhatsApp</a>` : '<span style="font-size:11px;color:var(--text3)">Sin WA</span>'}
         </div>
       </div>
       <div class="deuda-pedidos">${pedidosHtml}</div>

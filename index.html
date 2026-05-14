@@ -478,6 +478,12 @@ select option{background:var(--bg3)}
 <div class="toast" id="toast"></div>
 
 <script>
+function buildWALink(wa,nombre,deuda){
+  const num=(wa||'').replace(/[^0-9]/g,'');
+  const msg=encodeURIComponent('Hola '+nombre+'! Te recordamos que tenes un saldo pendiente de $'+Number(deuda).toLocaleString('es-AR')+' con Metele. Cuando puedas coordinar el pago, avisanos. Gracias!');
+  return 'https://wa.me/'+num+'?text='+msg;
+}
+
 const SURL='https://xcbzmwwepkryfvmijqno.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYnptd3dlcGtyeWZ2bWlqcW5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTAzNDgsImV4cCI6MjA5MzkyNjM0OH0.DlQVrDD1Oiw4K-3Pe-OXUh3W1FeBLPvxEzQUrztpnu8';
 const SH={'Content-Type':'application/json','apikey':SKEY,'Authorization':'Bearer '+SKEY,'Prefer':'return=representation'};
@@ -872,7 +878,7 @@ function renderEntregasPendientes(){
     return;
   }
 
-  document.getElementById('d-pendientes').textContent = pendientes.length;
+  const dpEl=document.getElementById('d-pendientes'); if(dpEl) dpEl.textContent=pendientes.length;
   
   // Dashboard mini list
   const dashboardHtml = pendientes.slice(0, 8).map(v => {
@@ -1305,12 +1311,13 @@ function updateDashboard(){
     const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad,precio:v.precio}];
     return a+items.reduce((b,it)=>{const co=costoMap[it.producto_id]||{};const ct=((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0);return b+((it.precio||0)*(it.cantidad||0)-ct);},0);
   },0);
-  document.getElementById('d-ventas').textContent='$'+tv.toLocaleString('es-AR');
-  document.getElementById('d-vsub').textContent=vm.length+' pedidos este mes';
-  document.getElementById('d-gan').textContent='$'+Math.round(gan).toLocaleString('es-AR');
-  document.getElementById('d-deuda').textContent='$'+td.toLocaleString('es-AR');
-  document.getElementById('d-cli').textContent=clientes.length;
-  document.getElementById('d-pendientes').textContent=pendientesEntrega;
+  const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setEl('d-ventas','$'+tv.toLocaleString('es-AR'));
+  setEl('d-vsub',vm.length+' pedidos este mes');
+  setEl('d-gan','$'+Math.round(gan).toLocaleString('es-AR'));
+  setEl('d-deuda','$'+td.toLocaleString('es-AR'));
+  setEl('d-cli',clientes.length);
+  setEl('d-pendientes',pendientesEntrega);
   const al=ventas.filter(v=>(v.total||0)>(v.pagado||0)).reduce((map,v)=>{map[v.cliente_nombre]=(map[v.cliente_nombre]||0)+((v.total||0)-(v.pagado||0));return map;},{});
   const alHtml=Object.entries(al).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,d])=>`<div class="alert-box">💰 <strong>${n}</strong> debe $${d.toLocaleString('es-AR')}</div>`).join('');
   document.getElementById('d-alertas').innerHTML=alHtml||'<div style="font-size:13px;color:var(--green);padding:8px 0">✓ Todos al día</div>';

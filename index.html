@@ -113,6 +113,7 @@ select option{background:var(--bg3)}
   .sidebar{display:none}
   .main{margin-left:0;padding:1rem}
   .mobile-header{display:flex}
+  .burger-btn{display:inline-flex}
   /* single column everything */
   .grid4,.grid2,.grid3,#dash-metrics{grid-template-columns:1fr!important}
   .item-row-grid{grid-template-columns:1fr 60px 80px 32px;gap:6px}
@@ -146,16 +147,16 @@ select option{background:var(--bg3)}
 }
 
 /* ── BURGER MENU ─────────────────────────────────────────── */
-.burger-btn{background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:5px;border-radius:6px}
-.burger-btn span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .25s}
+.burger-btn{display:none;background:var(--bg3);border:1px solid var(--border2);cursor:pointer;padding:9px 12px;align-items:center;justify-content:center;border-radius:10px;line-height:1;flex-shrink:0}
+.burger-btn:hover{background:#2a2927;border-color:var(--accent)}
 .burger-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150}
 .burger-overlay.open{display:block}
-.burger-menu{position:fixed;top:0;left:-260px;width:240px;height:100vh;background:var(--bg2);border-right:1px solid var(--border2);z-index:160;display:flex;flex-direction:column;gap:4px;padding:1.25rem 1rem;overflow-y:auto;transition:left .25s cubic-bezier(.4,0,.2,1)}
-.burger-menu.open{left:0}
+.burger-menu{position:fixed;top:0;right:-280px;width:260px;height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:160;display:flex;flex-direction:column;gap:3px;padding:1.25rem 1rem;overflow-y:auto;transition:right .28s cubic-bezier(.4,0,.2,1)}
+.burger-menu.open{right:0}
 .burger-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
-.burger-close{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px}
-.burger-close:hover{background:var(--bg3);color:var(--text)}
-.burger-nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);border:none;background:none;color:var(--text2);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;text-align:left;transition:all .15s}
+.burger-close{background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:16px;cursor:pointer;padding:5px 10px;border-radius:8px;line-height:1}
+.burger-close:hover{color:var(--text);border-color:var(--border2)}
+.burger-nav-btn{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:var(--radius);border:none;background:none;color:var(--text2);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;text-align:left;transition:all .15s}
 .burger-nav-btn:hover{background:var(--bg3);color:var(--text)}
 .burger-nav-btn.active{background:var(--accent);color:#fff;font-weight:500}
 </style>
@@ -186,10 +187,14 @@ select option{background:var(--bg3)}
 <main class="main">
   <div class="mobile-header">
     <div class="mobile-logo">🍕 Metele</div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)"><div class="dot warn" id="sdot-m"></div><span id="slabel-m">...</span></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3)"><div class="dot warn" id="sdot-m"></div><span id="slabel-m">...</span></div>
       <button class="burger-btn" onclick="toggleBurger()" id="burger-btn" aria-label="Menú">
-        <span></span><span></span><span></span>
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="18" height="2.2" rx="1.1" fill="#e8522a"/>
+          <rect y="5.9" width="18" height="2.2" rx="1.1" fill="#e8522a"/>
+          <rect y="11.8" width="18" height="2.2" rx="1.1" fill="#e8522a"/>
+        </svg>
       </button>
     </div>
   </div>

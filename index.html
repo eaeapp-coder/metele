@@ -112,46 +112,52 @@ select option{background:var(--bg3)}
 @media(max-width:768px){
   .sidebar{display:none}
   .main{margin-left:0;padding:1rem}
-  .mobile-header{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;margin:-1rem -1rem 1.25rem}
-  .mobile-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:16px}
-  .mobile-nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:.25rem;margin-bottom:1.25rem;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .mobile-nav::-webkit-scrollbar{display:none}
-  .mobile-nav button{white-space:nowrap;font-size:12px;padding:7px 12px;flex-shrink:0}
-  .grid4{grid-template-columns:1fr 1fr}
-  .grid2{grid-template-columns:1fr}
-  .grid3{grid-template-columns:1fr}
+  .mobile-header{display:flex}
+  /* single column everything */
+  .grid4,.grid2,.grid3,#dash-metrics{grid-template-columns:1fr!important}
   .item-row-grid{grid-template-columns:1fr 60px 80px 32px;gap:6px}
   .chart-wrap{height:180px}
   .page-title{font-size:18px}
   .page-header{flex-direction:row;align-items:center}
-  .metric-value{font-size:20px}
-  .modal{width:100%!important;max-width:100%;margin:0;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;max-height:90vh}
+  .metric-value{font-size:22px}
+  /* modals slide up from bottom */
+  .modal{width:100%!important;max-width:100%!important;margin:0!important;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;max-height:90vh}
   .modal-bg{align-items:flex-end;padding:0}
-  .client-card .actions-row{gap:4px}
-  .row-item{flex-wrap:wrap;gap:8px}
-  .actions-row{flex-shrink:0}
-  .deuda-header{flex-wrap:wrap;gap:8px}
-  .deuda-card{padding:.9rem 1rem}
-  .venta-total-bar{flex-wrap:wrap;gap:6px}
   .row-flex{flex-direction:column;gap:0}
+  .venta-total-bar{flex-wrap:wrap;gap:6px}
   .prod-card{flex-wrap:wrap;gap:8px}
+  .deuda-header{flex-wrap:wrap;gap:8px}
   .sync-bar{display:none}
   .card{padding:1rem}
-  .btn-full{font-size:13px}
-  /* bigger tap targets */
   .btn-icon{padding:8px 12px;font-size:15px}
   .btn-sm{padding:7px 13px}
-  /* fix pedidos row on small screens */
-  #pedidos-list .row-item > div:first-child{min-width:0;flex:1}
-  #pedidos-list .row-item .actions-row{flex-wrap:nowrap}
-  /* deudas wa btn */
-  .btn-sm.btn-green, .btn-sm.btn-amber{font-size:11px;padding:5px 10px}
+  .actions-row{gap:4px}
+  /* hide desktop mobile-nav (replaced by burger) */
+  .mobile-nav{display:none}
 }
+
 @media(max-width:400px){
-  .grid4{grid-template-columns:1fr 1fr}
   .metric-value{font-size:18px}
   .item-row-grid{grid-template-columns:1fr 55px 75px 28px}
 }
+
+  .metric-value{font-size:18px}
+  .item-row-grid{grid-template-columns:1fr 55px 75px 28px}
+}
+
+/* ── BURGER MENU ─────────────────────────────────────────── */
+.burger-btn{background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:5px;border-radius:6px}
+.burger-btn span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .25s}
+.burger-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150}
+.burger-overlay.open{display:block}
+.burger-menu{position:fixed;top:0;left:-260px;width:240px;height:100vh;background:var(--bg2);border-right:1px solid var(--border2);z-index:160;display:flex;flex-direction:column;gap:4px;padding:1.25rem 1rem;overflow-y:auto;transition:left .25s cubic-bezier(.4,0,.2,1)}
+.burger-menu.open{left:0}
+.burger-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.burger-close{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.burger-close:hover{background:var(--bg3);color:var(--text)}
+.burger-nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);border:none;background:none;color:var(--text2);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;text-align:left;transition:all .15s}
+.burger-nav-btn:hover{background:var(--bg3);color:var(--text)}
+.burger-nav-btn.active{background:var(--accent);color:#fff;font-weight:500}
 </style>
 </head>
 <body>
@@ -164,6 +170,7 @@ select option{background:var(--bg3)}
   <button class="nav-btn active" onclick="showTab('dashboard',this)">◈ &nbsp;Inicio</button>
   <button class="nav-btn" onclick="showTab('pedidos',this)">◎ &nbsp;Pedidos</button>
   <button class="nav-btn" onclick="showTab('deudas',this)">💰 &nbsp;Deudas</button>
+  <button class="nav-btn" onclick="showTab('archivo',this)">📂 &nbsp;Archivo</button>
   <button class="nav-btn" onclick="showTab('clientes',this)">◉ &nbsp;Clientes</button>
   <button class="nav-btn" onclick="showTab('costos',this)">◇ &nbsp;Costos</button>
   <button class="nav-btn" onclick="showTab('recetas',this)">📋 &nbsp;Recetas</button>
@@ -179,19 +186,32 @@ select option{background:var(--bg3)}
 <main class="main">
   <div class="mobile-header">
     <div class="mobile-logo">🍕 Metele</div>
-    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)"><div class="dot warn" id="sdot-m"></div><span id="slabel-m">...</span></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)"><div class="dot warn" id="sdot-m"></div><span id="slabel-m">...</span></div>
+      <button class="burger-btn" onclick="toggleBurger()" id="burger-btn" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
-  <div class="mobile-nav">
-    <button class="btn btn-primary btn-sm" onclick="showTab('dashboard',this)">Inicio</button>
-    <button class="btn btn-sm" onclick="showTab('pedidos',this)">Pedidos</button>
-    <button class="btn btn-sm" onclick="showTab('deudas',this)">Deudas</button>
-    <button class="btn btn-sm" onclick="showTab('clientes',this)">Clientes</button>
-    <button class="btn btn-sm" onclick="showTab('costos',this)">Costos</button>
-    <button class="btn btn-sm" onclick="showTab('recetas',this)">Recetas</button>
-    <button class="btn btn-sm" onclick="showTab('productos',this)">Productos</button>
-    <button class="btn btn-sm" onclick="showTab('insumos',this)">Insumos</button>
-    <button class="btn btn-sm" onclick="showTab('estadisticas',this)">Stats</button>
-    <button class="btn btn-sm" onclick="showTab('exportar',this)">Backup</button>
+  <!-- BURGER MENU OVERLAY -->
+  <div class="burger-overlay" id="burger-overlay" onclick="closeBurger()"></div>
+  <div class="burger-menu" id="burger-menu">
+    <div class="burger-header">
+      <div class="mobile-logo">🍕 Metele</div>
+      <button class="burger-close" onclick="closeBurger()">✕</button>
+    </div>
+    <button class="burger-nav-btn" onclick="burgerNav('dashboard')">◈ &nbsp;Inicio</button>
+    <button class="burger-nav-btn" onclick="burgerNav('pedidos')">◎ &nbsp;Pedidos</button>
+    <button class="burger-nav-btn" onclick="burgerNav('deudas')">💰 &nbsp;Deudas</button>
+    <button class="burger-nav-btn" onclick="burgerNav('archivo')">📂 &nbsp;Archivo</button>
+    <button class="burger-nav-btn" onclick="burgerNav('clientes')">◉ &nbsp;Clientes</button>
+    <button class="burger-nav-btn" onclick="burgerNav('costos')">◇ &nbsp;Costos</button>
+    <button class="burger-nav-btn" onclick="burgerNav('recetas')">📋 &nbsp;Recetas</button>
+    <button class="burger-nav-btn" onclick="burgerNav('productos')">▣ &nbsp;Productos</button>
+    <button class="burger-nav-btn" onclick="burgerNav('insumos')">◈ &nbsp;Insumos</button>
+    <button class="burger-nav-btn" onclick="burgerNav('estadisticas')">◉ &nbsp;Estadísticas</button>
+    <button class="burger-nav-btn" onclick="burgerNav('exportar')">⬍ &nbsp;Exportar</button>
+    <button class="burger-nav-btn" onclick="burgerNav('guia')">◌ &nbsp;Guía admin</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -200,11 +220,12 @@ select option{background:var(--bg3)}
       <p class="page-title">Panel de control</p>
       <button class="btn btn-primary" onclick="openPedidoModal()">+ Nuevo pedido</button>
     </div>
-    <div class="grid4" style="margin-bottom:1.25rem">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:1.25rem" id="dash-metrics">
       <div class="metric"><div class="metric-label">Pedidos del mes</div><div class="metric-value" id="d-ventas">$0</div><div class="metric-sub" id="d-vsub">0 pedidos</div></div>
-      <div class="metric"><div class="metric-label">Ganancia</div><div class="metric-value" id="d-gan">$0</div><div class="metric-sub">estimada</div></div>
+      <div class="metric"><div class="metric-label">Pedidos esta semana</div><div class="metric-value" id="d-semana">$0</div><div class="metric-sub" id="d-semana-sub">0 pedidos</div></div>
+      <div class="metric"><div class="metric-label">Ganancia</div><div class="metric-value" id="d-gan">$0</div><div class="metric-sub">estimada mes</div></div>
       <div class="metric"><div class="metric-label">Deuda total</div><div class="metric-value amount-red" id="d-deuda">$0</div><div class="metric-sub" id="d-deuda-sub">de clientes</div></div>
-      <div class="metric"><div class="metric-label">Pendientes a entregar</div><div class="metric-value amount-amber" id="d-pendientes">0</div><div class="metric-sub">hoy y próximos días</div></div>
+      <div class="metric"><div class="metric-label">Pendientes a entregar</div><div class="metric-value amount-amber" id="d-pendientes">0</div><div class="metric-sub">sin entregar</div></div>
     </div>
     <div class="grid2">
       <div class="card"><div class="card-title">Alertas de deuda</div><div id="d-alertas"><div class="empty"><div class="empty-icon">✓</div>Sin alertas</div></div></div>
@@ -226,7 +247,22 @@ select option{background:var(--bg3)}
       <div class="card-title">📦 Entregas pendientes por cliente</div>
       <div id="entregas-pendientes"><div class="empty" style="padding:1.5rem"><div class="empty-icon">✓</div>Sin entregas pendientes</div></div>
     </div>
-    <div class="card"><div class="card-title">Historial de todos los pedidos</div><div id="pedidos-list"><div class="empty"><div class="empty-icon">◌</div>Cargando...</div></div></div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div class="card-title" style="margin-bottom:0">Pedidos de esta semana</div>
+        <button class="btn btn-sm" onclick="showTab('archivo',this)">📂 Ver archivo</button>
+      </div>
+      <div id="pedidos-list"><div class="empty"><div class="empty-icon">◌</div>Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- ARCHIVO -->
+  <div id="tab-archivo" class="section">
+    <div class="page-header">
+      <p class="page-title">Archivo de pedidos</p>
+      <button class="btn" onclick="showTab('pedidos',document.querySelector('.nav-btn.active'))">← Volver</button>
+    </div>
+    <div class="card"><div class="card-title">Todos los pedidos anteriores</div><div id="archivo-list"><div class="empty"><div class="empty-icon">📂</div>Cargando...</div></div></div>
   </div>
 
   <!-- DEUDAS -->
@@ -486,8 +522,8 @@ select option{background:var(--bg3)}
     <div class="modal-title" id="m-receta-title">Nueva receta</div>
     <label>Producto</label>
     <select id="rec-prod" style="margin-bottom:12px"></select>
-    <label>Porciones que rinde</label>
-    <input type="number" id="rec-porciones" placeholder="Ej: 1 pizza" min="1" value="1">
+    <label>Unidades que rinde</label>
+    <input type="number" id="rec-porciones" placeholder="Ej: 1" min="1" value="1">
     <label>Descripción / Notas generales</label>
     <input type="text" id="rec-desc" placeholder="Ej: Pizza lista para hornear a 220°C por 15 min">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;margin-top:4px">
@@ -699,7 +735,7 @@ function renderRecetas(){
           '<div style="font-size:28px">' + emoji + '</div>' +
           '<div>' +
             '<div style="font-weight:600;font-size:15px">' + (r.producto_nombre||'') + '</div>' +
-            '<div style="font-size:12px;color:var(--text3)">Rinde ' + (r.porciones||1) + ' porción' + ((r.porciones||1)!==1?'es':'') + (r.descripcion?' · '+r.descripcion:'') + '</div>' +
+            '<div style="font-size:12px;color:var(--text3)">Rinde ' + (r.porciones||1) + ' unidad' + ((r.porciones||1)!==1?'es':'') + (r.descripcion?' · '+r.descripcion:'') + '</div>' +
           '</div>' +
         '</div>' +
         '<div class="actions-row">' +
@@ -712,6 +748,38 @@ function renderRecetas(){
       (pasosHtml ? '<div class="card-title" style="margin-top:1rem">Preparación</div>' + pasosHtml : '') +
     '</div>';
   }).join('');
+}
+
+
+// Event delegation for pedido rows (avoids onclick quote issues)
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('button[data-pago],button[data-entrega],button[data-edit],button[data-del]');
+  if(!btn) return;
+  if(btn.dataset.pago) abrirPagoParcial(btn.dataset.pago);
+  if(btn.dataset.entrega) marcarEntregado(btn.dataset.entrega);
+  if(btn.dataset.edit) openPedidoModal(btn.dataset.edit);
+  if(btn.dataset.del) eliminarPedido(btn.dataset.del);
+});
+
+
+// ── BURGER MENU ───────────────────────────────────────────────
+function toggleBurger(){
+  document.getElementById('burger-menu').classList.toggle('open');
+  document.getElementById('burger-overlay').classList.toggle('open');
+}
+function closeBurger(){
+  document.getElementById('burger-menu').classList.remove('open');
+  document.getElementById('burger-overlay').classList.remove('open');
+}
+function burgerNav(tab){
+  closeBurger();
+  showTab(tab, null);
+  // highlight active burger btn
+  document.querySelectorAll('.burger-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.burger-nav-btn').forEach(b=>{
+    if(b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+tab+"'"))
+      b.classList.add('active');
+  });
 }
 
 async function init(){
@@ -742,7 +810,7 @@ async function init(){
   }
 }
 
-function renderAll(){renderClientes();renderPedidos();renderEntregasPendientes();renderDeudas();renderInsumos();renderProductos();renderCostos();renderRecetas();updateDashboard();updateExportStats();}
+function renderAll(){renderClientes();renderPedidos();renderArchivo();renderEntregasPendientes();renderDeudas();renderInsumos();renderProductos();renderCostos();renderRecetas();updateDashboard();updateExportStats();}
 function sync(s,t){['sdot','sdot-m'].forEach(id=>{const el=document.getElementById(id);if(el){el.className='dot';if(s==='warn')el.classList.add('warn');else if(s==='off')el.classList.add('off');}});['slabel','slabel-m'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t;});}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
 function busy(id,on,txt){const b=document.getElementById(id);if(!b)return;b.disabled=on;b.innerHTML=on?'<span class="spinner"></span> Guardando...':(txt||'Guardar');}
@@ -756,6 +824,7 @@ function showTab(tab,btn){
   if(btn){btn.classList.add('active');if(btn.closest('.mobile-nav'))btn.classList.add('btn-primary');}
   if(tab==='estadisticas')setTimeout(buildCharts,100);
   if(tab==='deudas')renderDeudas();
+  if(tab==='archivo')renderArchivo();
   if(tab==='exportar')updateExportStats();
 }
 function openModal(id){document.getElementById(id).classList.add('open');}
@@ -967,30 +1036,84 @@ function getEntregaTag(v){
   return '<span class="tag tag-amber">Por entregar</span>';
 }
 
-function renderPedidos(){
-  const el=document.getElementById('pedidos-list');
-  if(!ventas.length){el.innerHTML='<div class="empty"><div class="empty-icon">◌</div>Sin pedidos registrados</div>';return;}
-  el.innerHTML=ventas.map(v=>`
-    <div class="row-item">
-      <div style="flex:1;min-width:0">
-        <div class="row-name">${v.cliente_nombre||''}</div>
-        <div class="row-sub">${v.producto_nombre||''} · ${v.cantidad||0} unid · ${v.canal==='almacen'?'Almacén':'Directo'} · ${v.fecha||''}</div>
-        <div style="margin-top:4px;display:flex;gap:8px">${getPagoTag(v)} ${getEntregaTag(v)}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:8px">
-        <div style="text-align:right">
-          <div class="row-amount">$${(v.total||0).toLocaleString('es-AR')}</div>
-          ${(v.pagado||0)>0&&v.pago!=='pagado'?`<div style="font-size:11px;color:var(--green)">Cobrado: $${(v.pagado||0).toLocaleString('es-AR')}</div>`:''}
-        </div>
-        <div class="actions-row">
-          ${!v.entregado?`<button class="btn btn-icon btn-sm btn-green" title="Marcar como entregado" onclick="marcarEntregado('${v.id}')">✔</button>`:''}
-          ${v.pago!=='pagado'&&(v.total||0)>(v.pagado||0)?`<button class="btn btn-icon btn-sm btn-green" title="Registrar pago" onclick="abrirPagoParcial('${v.id}')">$</button>`:''}
-          <button class="btn btn-icon btn-sm" title="Editar" onclick="openPedidoModal('${v.id}')">✏</button>
-          <button class="btn btn-icon btn-sm btn-danger" title="Eliminar" onclick="eliminarPedido('${v.id}')">✕</button>
-        </div>
-      </div>
-    </div>`).join('');
+
+// ── SEMANA / ARCHIVO ──────────────────────────────────────────
+function getLunes(){
+  const hoy = new Date();
+  const dia = hoy.getDay(); // 0=dom, 1=lun...
+  const diff = (dia === 0) ? -6 : 1 - dia; // retroceder al lunes
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() + diff);
+  lunes.setHours(0,0,0,0);
+  return lunes;
 }
+function getDomingo(){
+  const lunes = getLunes();
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+  domingo.setHours(23,59,59,999);
+  return domingo;
+}
+function esDeSemana(v){
+  if(!v.fecha) return false;
+  const f = new Date(v.fecha + 'T00:00:00');
+  return f >= getLunes() && f <= getDomingo();
+}
+
+function renderPedidos(){
+  const el = document.getElementById('pedidos-list');
+  if(!el) return;
+  const deSemana = ventas.filter(v => esDeSemana(v));
+  if(!deSemana.length){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">◌</div>Sin pedidos esta semana</div>';
+    return;
+  }
+  el.innerHTML = deSemana.map(v => buildPedidoRow(v)).join('');
+}
+
+function renderArchivo(){
+  const el = document.getElementById('archivo-list');
+  if(!el) return;
+  const lunes = getLunes();
+  const anteriores = ventas.filter(v => {
+    if(!v.fecha) return false;
+    const f = new Date(v.fecha + 'T00:00:00');
+    return f < lunes;
+  });
+  if(!anteriores.length){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📂</div>Sin pedidos anteriores a esta semana</div>';
+    return;
+  }
+  el.innerHTML = anteriores.map(v => buildPedidoRow(v)).join('');
+}
+
+function buildPedidoRow(v){
+  const saldo=(v.total||0)-(v.pagado||0);
+  const pagoTag=getPagoTag(v);
+  const entregaTag=getEntregaTag(v);
+  const cobradoHtml=(v.pagado||0)>0&&v.pago!=='pagado'?'<div style="font-size:11px;color:var(--green)">Cobrado: $'+(v.pagado||0).toLocaleString('es-AR')+'</div>':'';
+  const pagoBtn=v.pago!=='pagado'&&saldo>0?'<button class="btn btn-icon btn-sm btn-green" title="Registrar pago" data-pago="'+v.id+'">$</button>':'';
+  const entregaBtn=!v.entregado?'<button class="btn btn-icon btn-sm btn-green" title="Marcar entregado" data-entrega="'+v.id+'">✔</button>':'';
+  const editBtn='<button class="btn btn-icon btn-sm" title="Editar" data-edit="'+v.id+'">✏</button>';
+  const delBtn='<button class="btn btn-icon btn-sm btn-danger" title="Eliminar" data-del="'+v.id+'">✕</button>';
+  return '<div class="row-item pedido-row">'+
+    '<div style="flex:1;min-width:0">'+
+      '<div class="row-name">'+(v.cliente_nombre||'')+'</div>'+
+      '<div class="row-sub">'+(v.producto_nombre||'')+' · '+(v.cantidad||0)+' unid · '+(v.canal==='almacen'?'Almacén':'Directo')+' · '+(v.fecha||'')+'</div>'+
+      '<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">'+pagoTag+' '+entregaTag+'</div>'+
+    '</div>'+
+    '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px">'+
+      '<div style="text-align:right">'+
+        '<div class="row-amount">$'+(v.total||0).toLocaleString('es-AR')+'</div>'+
+        cobradoHtml+
+      '</div>'+
+      '<div class="actions-row">'+entregaBtn+pagoBtn+editBtn+delBtn+'</div>'+
+    '</div>'+
+  '</div>';
+}
+
+
+
 
 // ── PAGOS PARCIALES ───────────────────────────────────────────
 function abrirPagoParcial(ventaId){
@@ -1516,6 +1639,9 @@ function updateDashboard(){
   const tv=vm.reduce((a,v)=>a+(v.total||0),0);
   const td=ventas.reduce((a,v)=>{const s=(v.total||0)-(v.pagado||0);return a+(s>0?s:0);},0);
   const pendientesEntrega=ventas.filter(v=>v.entregado!==true).length;
+  // semana
+  const vs=ventas.filter(v=>esDeSemana(v));
+  const tvs=vs.reduce((a,v)=>a+(v.total||0),0);
   const gan=vm.reduce((a,v)=>{
     const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad,precio:v.precio}];
     return a+items.reduce((b,it)=>{const co=costoMap[it.producto_id]||{};const ct=((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0);return b+((it.precio||0)*(it.cantidad||0)-ct);},0);
@@ -1523,6 +1649,8 @@ function updateDashboard(){
   const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   setEl('d-ventas','$'+tv.toLocaleString('es-AR'));
   setEl('d-vsub',vm.length+' pedidos este mes');
+  setEl('d-semana','$'+tvs.toLocaleString('es-AR'));
+  setEl('d-semana-sub',vs.length+' pedidos esta semana');
   setEl('d-gan','$'+Math.round(gan).toLocaleString('es-AR'));
   setEl('d-deuda','$'+td.toLocaleString('es-AR'));
   setEl('d-cli',clientes.length);

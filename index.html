@@ -666,9 +666,13 @@ function showTab(tab,btn){
   if(btn) btn.classList.add('active');
   else {const sb=document.querySelector('.sidebar .nav-btn[onclick*="\''+tab+'\'"]');if(sb)sb.classList.add('active');}
   if(tab==='estadisticas')setTimeout(buildCharts,100);
-  if(tab==='deudas')renderDeudas();
+  if(tab==='deudas'){
+    sbGet('ventas','select=*').then(r=>{ventas=r||[];renderDeudas();}).catch(()=>renderDeudas());
+  }
   if(tab==='archivo')renderArchivo();
-  if(tab==='caja')renderCaja();
+  if(tab==='caja'){
+    sbGet('caja','select=*').then(r=>{movimientos=r||[];renderCaja();}).catch(()=>renderCaja());
+  }
   if(tab==='exportar')updateExportStats();
 }
 
@@ -1048,8 +1052,19 @@ function openMovModal(tipo,editId=null){
 }
 async function registrarCobroCaja(monto,clienteNombre,fecha){
   const d={tipo:'ingreso',categoria:'Cobro pedido',descripcion:'Cobro — '+clienteNombre,monto,fecha:fecha||new Date().toISOString().split('T')[0],notas:'Auto'};
-  try{const res=await sbPost('caja',d);movimientos.unshift(res[0]||d);if(document.getElementById('tab-caja').classList.contains('visible'))renderCaja();}
-  catch(e){console.error('Caja auto-registro:',e);}
+  try{
+    console.log('Registrando en caja:', d);
+    const res=await sbPost('caja',d);
+    const mov=Array.isArray(res)?res[0]:res;
+    console.log('Caja response:', mov);
+    if(mov&&mov.id) movimientos.unshift(mov);
+    else movimientos.unshift({...d,id:'tmp-'+Date.now()});
+    if(document.getElementById('tab-caja').classList.contains('visible'))renderCaja();
+  }
+  catch(e){
+    console.error('Caja auto-registro error:', e);
+    toast('⚠ No se pudo registrar en caja: '+e.message);
+  }
 }
 async function guardarMovimiento(){
   const monto=parseFloat(document.getElementById('mov-monto').value)||0;const desc=document.getElementById('mov-desc').value.trim();

@@ -317,6 +317,7 @@ textarea{resize:vertical}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-green" onclick="openMovModal('ingreso')">+ Ingreso manual</button>
         <button class="btn btn-primary" onclick="openSetSaldo()">⚙ Ajustar saldo</button>
+        <button class="btn btn-sm" onclick="testCajaInsert()" style="color:var(--amber);border-color:rgba(232,168,48,.3)">🔧 Test conexión</button>
       </div>
     </div>
     <div class="grid4" style="margin-bottom:1.25rem">
@@ -941,12 +942,19 @@ async function confirmarPagoParcial(){
     const saldoNuevo=(v.total||0)-nuevoPagado;
     const nuevoPago=saldoNuevo<=0?'pagado':(nuevoPagado>0?'parcial':'pendiente');
     const pagos=[...(v.pagos||[]),{monto,fecha,notas}];
-    await sbPatch('ventas',v.id,{pagado:nuevoPagado,pago:nuevoPago,pagos});
+    // Register in caja FIRST so it always saves even if something else fails
+    await registrarCobroCaja(monto,v.cliente_nombre||'',fecha);
+    // Then update ventas — use only safe fields in case pagos column missing
+    try{
+      await sbPatch('ventas',v.id,{pagado:nuevoPagado,pago:nuevoPago,pagos});
+    }catch(patchErr){
+      // Try without pagos array in case column has issues
+      console.warn('Patch with pagos failed, retrying without:', patchErr.message);
+      await sbPatch('ventas',v.id,{pagado:nuevoPagado,pago:nuevoPago});
+    }
     v.pagado=nuevoPagado;v.pago=nuevoPago;v.pagos=pagos;
     const cli=clientes.find(c=>c.id===v.cliente_id);
     if(cli){const nd=Math.max(0,(cli.deuda||0)-monto);await sbPatch('clientes',cli.id,{deuda:nd});cli.deuda=nd;}
-    // auto-register in caja
-    await registrarCobroCaja(monto,v.cliente_nombre||'',fecha);
     closeModal('m-pago-parcial');renderPedidos();renderArchivo();renderEntregasPendientes();renderDeudas();renderClientes();updateDashboard();
     toast(saldoNuevo<=0?'✓ Pedido saldado':'✓ Pago parcial registrado');
   }catch(e){toast('⚠ Error: '+e.message);console.error(e);}
@@ -1050,20 +1058,39 @@ function openMovModal(tipo,editId=null){
   else{document.getElementById('mov-desc').value='';document.getElementById('mov-monto').value='';document.getElementById('mov-fecha').value=new Date().toISOString().split('T')[0];document.getElementById('mov-notas').value='';}
   openModal('m-mov');
 }
-async function registrarCobroCaja(monto,clienteNombre,fecha){
-  const d={tipo:'ingreso',categoria:'Cobro pedido',descripcion:'Cobro — '+clienteNombre,monto,fecha:fecha||new Date().toISOString().split('T')[0],notas:'Auto'};
+
+// Test caja insert
+async function testCajaInsert(){
   try{
-    console.log('Registrando en caja:', d);
-    const res=await sbPost('caja',d);
-    const mov=Array.isArray(res)?res[0]:res;
-    console.log('Caja response:', mov);
-    if(mov&&mov.id) movimientos.unshift(mov);
-    else movimientos.unshift({...d,id:'tmp-'+Date.now()});
-    if(document.getElementById('tab-caja').classList.contains('visible'))renderCaja();
+    const d={tipo:'ingreso',categoria:'Test',descripcion:'Test de conexión caja',monto:1,fecha:new Date().toISOString().split('T')[0],notas:'test'};
+    const res = await sbPost('caja', d);
+    console.log('Test result:', JSON.stringify(res));
+    toast('✓ Test OK — revisá consola');
+  }catch(e){
+    console.error('Test error:', e);
+    toast('⚠ Test falló: '+e.message);
   }
-  catch(e){
-    console.error('Caja auto-registro error:', e);
-    toast('⚠ No se pudo registrar en caja: '+e.message);
+}
+
+async function registrarCobroCaja(monto,clienteNombre,fecha){
+  try{
+    const montoNum = parseFloat(monto)||0;
+    if(montoNum <= 0) return;
+    const d={
+      tipo:'ingreso',
+      categoria:'Cobro pedido',
+      descripcion:'Cobro — '+(clienteNombre||''),
+      monto:montoNum,
+      fecha:fecha||new Date().toISOString().split('T')[0],
+      notas:'Auto'
+    };
+    const res = await sbPost('caja', d);
+    const mov = Array.isArray(res) ? res[0] : res;
+    if(mov) movimientos.unshift(mov);
+    if(document.getElementById('tab-caja').classList.contains('visible')) renderCaja();
+  } catch(e){
+    // Don't block the payment flow, just log
+    console.error('Caja registro falló:', e.message, e);
   }
 }
 async function guardarMovimiento(){

@@ -701,6 +701,31 @@ function toggleTheme(){
   applyTheme(saved);
 })();
 
+
+// ── NOTIFICACION WHATSAPP ─────────────────────────────────────
+const WA_METELE = '5493875684449'; // 549 + número sin 0
+
+function notificarNuevoPedido(pedido){
+  try{
+    const items = pedido.items||[{producto_nombre:pedido.producto_nombre,cantidad:pedido.cantidad}];
+    const detalle = items.map(it=>it.cantidad+'x '+it.producto_nombre).join(', ');
+    const pago = pedido.pago==='pagado'?'Pagado ✓':pedido.pago==='parcial'?'Pago parcial':'Fiado';
+    const lineas = [
+      '🍕 *Nuevo pedido Metele*',
+      '',
+      '👤 Cliente: '+pedido.cliente_nombre,
+      '📦 '+detalle,
+      '💵 Total: $'+Number(pedido.total).toLocaleString('es-AR'),
+      '💳 Pago: '+pago,
+      '📅 Entrega: '+(pedido.fecha||'Sin fecha'),
+      '🚚 Canal: '+(pedido.canal==='almacen'?'Almacén':'Directo')
+    ];
+    const msg = lineas.join('\n');
+    const url = 'https://wa.me/'+WA_METELE+'?text='+encodeURIComponent(msg);
+    window.open(url, '_blank');
+  }catch(e){console.error('WA notify error:',e);}
+}
+
 async function init(){
   sync('warn','Conectando...');
   try{
@@ -879,6 +904,7 @@ async function guardarPedido(){
       ventas.unshift(res[0]||d);
       if(pago!=='pagado'&&cli){const nd=(cli.deuda||0)+total;await sbPatch('clientes',cid,{deuda:nd});cli.deuda=nd;}
       toast('✓ Pedido guardado');
+      notificarNuevoPedido(ventas[0]);
     }
     closeModal('m-pedido');renderPedidos();renderArchivo();renderEntregasPendientes();renderDeudas();renderClientes();updateDashboard();
   }catch(e){toast('⚠ Error: '+e.message);console.error(e);}

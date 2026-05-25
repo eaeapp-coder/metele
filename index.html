@@ -470,6 +470,8 @@ textarea{resize:vertical}
       <span style="font-size:13px;color:var(--text2)">Total del pedido</span>
       <span style="font-weight:600;font-family:'DM Mono',monospace;font-size:16px" id="pedido-total-display">$0</span>
     </div>
+    <label>Notas del pedido</label>
+    <textarea id="v-notas" rows="2" placeholder="Ej: Media muzza con aceitunas, media especial sin cebolla..." style="margin-bottom:12px"></textarea>
     <input type="hidden" id="v-edit-id">
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('m-pedido')">Cancelar</button>
@@ -720,6 +722,7 @@ function notificarNuevoPedido(pedido){
       '📅 Entrega: '+(pedido.fecha||'Sin fecha'),
       '🚚 Canal: '+(pedido.canal==='almacen'?'Almacén':'Directo')
     ];
+    if(pedido.notas) lineas.push('📝 Notas: '+pedido.notas);
     const msg = lineas.join('\n');
     const url = 'https://wa.me/'+WA_METELE+'?text='+encodeURIComponent(msg);
     window.open(url, '_blank');
@@ -782,6 +785,7 @@ function buildPedidoRow(v){
     '<div style="flex:1;min-width:0">'+
       '<div class="row-name">'+(v.cliente_nombre||'')+'</div>'+
       '<div class="row-sub">'+(v.producto_nombre||'')+' · '+(v.cantidad||0)+' unid · '+(v.canal==='almacen'?'Almacén':'Directo')+' · '+(v.fecha||'')+'</div>'+
+      (v.notas?'<div style="font-size:12px;color:var(--accent2);margin-top:2px">📝 '+v.notas+'</div>':'')+
       '<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">'+getPagoTag(v)+' '+getEntregaTag(v)+'</div>'+
     '</div>'+
     '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px">'+
@@ -888,7 +892,7 @@ async function guardarPedido(){
   const pago=document.getElementById('v-pago').value;
   const cli=clientes.find(c=>c.id===cid);
   const first=items[0];
-  const d={cliente_id:cid,cliente_nombre:cli?cli.nombre:'',producto_id:first.producto_id,producto_nombre:items.map(it=>it.producto_nombre).join(', '),canal:document.getElementById('v-canal').value,cantidad:items.reduce((a,it)=>a+it.cantidad,0),precio:first.precio,total,pago,pagado:pago==='pagado'?total:0,fecha:document.getElementById('v-fecha').value||null,fecha_cobro:document.getElementById('v-fcobro').value||null,items,pagos:[]};
+  const d={cliente_id:cid,cliente_nombre:cli?cli.nombre:'',producto_id:first.producto_id,producto_nombre:items.map(it=>it.producto_nombre).join(', '),canal:document.getElementById('v-canal').value,cantidad:items.reduce((a,it)=>a+it.cantidad,0),precio:first.precio,total,pago,pagado:pago==='pagado'?total:0,fecha:document.getElementById('v-fecha').value||null,fecha_cobro:document.getElementById('v-fcobro').value||null,items,pagos:[],notas:document.getElementById('v-notas').value.trim()};
   try{
     if(editId){
       const old=ventas.find(v=>v.id===editId);

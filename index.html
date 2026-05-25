@@ -907,6 +907,10 @@ async function guardarPedido(){
       const res=await sbPost('ventas',d);
       ventas.unshift(res[0]||d);
       if(pago!=='pagado'&&cli){const nd=(cli.deuda||0)+total;await sbPatch('clientes',cid,{deuda:nd});cli.deuda=nd;}
+      // Si el pedido se guardó como pagado, registrar en caja automáticamente
+      if(pago==='pagado'){
+        await registrarCobroCaja(total, cli?cli.nombre:'', d.fecha||new Date().toISOString().split('T')[0]);
+      }
       toast('✓ Pedido guardado');
       notificarNuevoPedido(ventas[0]);
     }

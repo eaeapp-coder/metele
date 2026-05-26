@@ -136,6 +136,9 @@ textarea{resize:vertical}
 [data-theme="light"] .burger-menu{box-shadow:-4px 0 20px rgba(0,0,0,.15)}
 [data-theme="light"] .modal{box-shadow:0 8px 32px rgba(0,0,0,.15)}
 [data-theme="light"] .toast{box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.stats-filter-btn{padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s}
+.stats-filter-btn:hover{background:#2a2927;color:var(--text)}
+.stats-filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
 .mobile-header{display:none;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;margin:-1rem -1rem 1.25rem}
 .mobile-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:16px}
 @media(max-width:768px){
@@ -371,14 +374,41 @@ textarea{resize:vertical}
 
   <!-- ESTADÍSTICAS -->
   <div id="tab-estadisticas" class="section">
-    <p class="page-title">Estadísticas</p>
+    <div class="page-header">
+      <p class="page-title">Estadísticas</p>
+    </div>
+    <!-- FILTRO DE TIEMPO -->
+    <div class="card" style="margin-bottom:1.25rem">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="stats-filter-btn active" onclick="setStatsPeriod('semanas',this)">Últimas semanas</button>
+          <button class="stats-filter-btn" onclick="setStatsPeriod('meses',this)">Últimos meses</button>
+          <button class="stats-filter-btn" onclick="setStatsPeriod('anio',this)">Este año</button>
+          <button class="stats-filter-btn" onclick="setStatsPeriod('todo',this)">Todo</button>
+        </div>
+        <select id="stats-n" onchange="buildCharts()" style="width:auto;margin-bottom:0;font-size:13px;padding:6px 12px" title="Cantidad de períodos">
+          <option value="4">4</option>
+          <option value="6" selected>6</option>
+          <option value="8">8</option>
+          <option value="12">12</option>
+        </select>
+      </div>
+    </div>
+    <!-- METRICAS DEL PERIODO -->
+    <div class="grid4" style="margin-bottom:1.25rem">
+      <div class="metric"><div class="metric-label">Total facturado</div><div class="metric-value" id="st-total">$0</div><div class="metric-sub" id="st-total-sub">en el período</div></div>
+      <div class="metric"><div class="metric-label">Ganancia</div><div class="metric-value amount-green" id="st-gan">$0</div><div class="metric-sub">estimada</div></div>
+      <div class="metric"><div class="metric-label">Pizzas vendidas</div><div class="metric-value" id="st-units">0</div><div class="metric-sub">unidades</div></div>
+      <div class="metric"><div class="metric-label">Pedidos</div><div class="metric-value" id="st-pedidos">0</div><div class="metric-sub">total</div></div>
+    </div>
+    <!-- GRAFICAS -->
     <div class="grid2" style="margin-bottom:1.25rem">
-      <div class="card"><div class="card-title">Pedidos por mes ($)</div><div class="chart-wrap"><canvas id="chart-ventas"></canvas></div></div>
+      <div class="card"><div class="card-title" id="chart-ventas-title">Facturación por período ($)</div><div class="chart-wrap"><canvas id="chart-ventas"></canvas></div></div>
       <div class="card"><div class="card-title">Ganancia vs Costo ($)</div><div class="chart-wrap"><canvas id="chart-gan"></canvas></div></div>
     </div>
     <div class="grid2">
       <div class="card"><div class="card-title">Unidades por producto</div><div class="chart-wrap"><canvas id="chart-prod"></canvas></div></div>
-      <div class="card"><div class="card-title">Top clientes</div><div class="chart-wrap"><canvas id="chart-cli"></canvas></div></div>
+      <div class="card"><div class="card-title">Top clientes por facturación</div><div class="chart-wrap"><canvas id="chart-cli"></canvas></div></div>
     </div>
   </div>
 
@@ -1304,21 +1334,118 @@ function updateDashboard(){
 }
 
 // ── ESTADÍSTICAS ──────────────────────────────────────────────
-function getLast6Months(){return Array.from({length:6},(_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-(5-i));return{key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleString('es-AR',{month:'short',year:'2-digit'})};});}
+let statsPeriod = 'meses';
+
+function setStatsPeriod(period, btn){
+  statsPeriod = period;
+  document.querySelectorAll('.stats-filter-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  buildCharts();
+}
+
+function getPeriodos(){
+  const n = parseInt(document.getElementById('stats-n')?.value||6);
+  const periodos = [];
+  const now = new Date();
+
+  if(statsPeriod === 'semanas'){
+    // last n weeks (Mon-Sun)
+    for(let i=n-1;i>=0;i--){
+      const lun = new Date(now);
+      const dia = lun.getDay()===0?-6:1-lun.getDay();
+      lun.setDate(lun.getDate()+dia-(i*7));
+      lun.setHours(0,0,0,0);
+      const dom = new Date(lun); dom.setDate(lun.getDate()+6); dom.setHours(23,59,59,999);
+      const label = lun.getDate()+'/'+(lun.getMonth()+1);
+      periodos.push({label, desde:lun, hasta:dom,
+        filter: v => { if(!v.fecha) return false; const f=new Date(v.fecha+'T00:00:00'); return f>=lun&&f<=dom; }
+      });
+    }
+  } else if(statsPeriod === 'meses'){
+    for(let i=n-1;i>=0;i--){
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      const label = d.toLocaleString('es-AR',{month:'short',year:'2-digit'});
+      periodos.push({label, key,
+        filter: v => v.fecha&&v.fecha.startsWith(key)
+      });
+    }
+  } else if(statsPeriod === 'anio'){
+    // months of current year
+    for(let m=0;m<=now.getMonth();m++){
+      const d = new Date(now.getFullYear(), m, 1);
+      const key = d.getFullYear()+'-'+String(m+1).padStart(2,'0');
+      const label = d.toLocaleString('es-AR',{month:'short'});
+      periodos.push({label, key,
+        filter: v => v.fecha&&v.fecha.startsWith(key)
+      });
+    }
+  } else {
+    // todo — group by month all time
+    const keys = [...new Set(ventas.map(v=>v.fecha?v.fecha.substring(0,7):null).filter(Boolean))].sort();
+    keys.forEach(key=>{
+      const [y,m] = key.split('-');
+      const d = new Date(parseInt(y), parseInt(m)-1, 1);
+      const label = d.toLocaleString('es-AR',{month:'short',year:'2-digit'});
+      periodos.push({label, key, filter: v=>v.fecha&&v.fecha.startsWith(key)});
+    });
+  }
+  return periodos;
+}
+
 function destroyCharts(){Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};}
+
 function buildCharts(){
-  destroyCharts();const months=getLast6Months(),labels=months.map(m=>m.label);
-  const cOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c9890',font:{size:11}}}},scales:{x:{ticks:{color:'#5c5a56'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#5c5a56'},grid:{color:'rgba(255,255,255,0.05)'}}}};
-  const vxm=months.map(m=>ventas.filter(v=>v.fecha&&v.fecha.startsWith(m.key)).reduce((a,v)=>a+(v.total||0),0));
-  const ganxm=months.map(m=>ventas.filter(v=>v.fecha&&v.fecha.startsWith(m.key)).reduce((a,v)=>{const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad,precio:v.precio}];return a+items.reduce((b,it)=>{const co=costoMap[it.producto_id]||{};return b+((it.precio||0)*(it.cantidad||0)-((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0));},0);},0));
-  const costoxm=months.map(m=>ventas.filter(v=>v.fecha&&v.fecha.startsWith(m.key)).reduce((a,v)=>{const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad}];return a+items.reduce((b,it)=>{const co=costoMap[it.producto_id]||{};return b+((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0);},0);},0));
-  const prodMap={};ventas.forEach(v=>{const items=v.items||[{producto_nombre:v.producto_nombre,cantidad:v.cantidad}];items.forEach(it=>{const n=it.producto_nombre||'Otro';prodMap[n]=(prodMap[n]||0)+(it.cantidad||0);});});
-  const cliMap={};ventas.forEach(v=>{if(v.cliente_nombre)cliMap[v.cliente_nombre]=(cliMap[v.cliente_nombre]||0)+(v.total||0);});
+  destroyCharts();
+  const periodos = getPeriodos();
+  const labels = periodos.map(p=>p.label);
+  const isDark = document.documentElement.getAttribute('data-theme')!=='light';
+  const tickColor = isDark?'#7c7870':'#9a9890';
+  const gridColor = isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)';
+  const legendColor = isDark?'#b8b4ae':'#4a4844';
+
+  const cOpts={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:legendColor,font:{size:11}}}},
+    scales:{x:{ticks:{color:tickColor},grid:{color:gridColor}},y:{ticks:{color:tickColor},grid:{color:gridColor}}}
+  };
+
+  // filter ventas to period
+  const ventasPeriodo = ventas.filter(v=>periodos.some(p=>p.filter(v)));
+
+  // facturacion por periodo
+  const vxp = periodos.map(p=>ventas.filter(p.filter).reduce((a,v)=>a+(v.total||0),0));
+  // ganancia y costo por periodo
+  const ganxp = periodos.map(p=>ventas.filter(p.filter).reduce((a,v)=>{
+    const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad,precio:v.precio}];
+    return a+items.reduce((b,it)=>{const co=costoMap[it.producto_id]||{};return b+((it.precio||0)*(it.cantidad||0)-((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0));},0);
+  },0));
+  const costoxp = periodos.map(p=>ventas.filter(p.filter).reduce((a,v)=>{
+    const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad}];
+    return a+items.reduce((b,it)=>{const co=costoMap[it.producto_id]||{};return b+((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0);},0);
+  },0));
+
+  // productos (all period)
+  const prodMap={};ventasPeriodo.forEach(v=>{const items=v.items||[{producto_nombre:v.producto_nombre,cantidad:v.cantidad}];items.forEach(it=>{const n=it.producto_nombre||'Otro';prodMap[n]=(prodMap[n]||0)+(it.cantidad||0);});});
+  // clientes (all period)
+  const cliMap={};ventasPeriodo.forEach(v=>{if(v.cliente_nombre)cliMap[v.cliente_nombre]=(cliMap[v.cliente_nombre]||0)+(v.total||0);});
   const cliSorted=Object.entries(cliMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // period summary metrics
+  const totalFact = ventasPeriodo.reduce((a,v)=>a+(v.total||0),0);
+  const totalGan = ganxp.reduce((a,x)=>a+x,0);
+  const totalUnits = ventasPeriodo.reduce((a,v)=>{const items=v.items||[{cantidad:v.cantidad}];return a+items.reduce((b,it)=>b+(it.cantidad||0),0);},0);
+  setEl('st-total','$'+totalFact.toLocaleString('es-AR'));
+  setEl('st-gan','$'+Math.round(totalGan).toLocaleString('es-AR'));
+  setEl('st-units',totalUnits);
+  setEl('st-pedidos',ventasPeriodo.length);
+  const titleMap={semanas:'Facturación por semana ($)',meses:'Facturación por mes ($)',anio:'Facturación mensual — '+new Date().getFullYear()+' ($)',todo:'Facturación total ($)'};
+  setEl('chart-ventas-title',titleMap[statsPeriod]||'Facturación ($)');
+
   const colors=['rgba(232,82,42,0.8)','rgba(76,175,110,0.8)','rgba(232,168,48,0.8)','rgba(100,160,240,0.8)','rgba(200,100,200,0.8)','rgba(100,200,200,0.8)'];
-  charts.ventas=new Chart(document.getElementById('chart-ventas'),{type:'bar',data:{labels,datasets:[{label:'Pedidos $',data:vxm,backgroundColor:'rgba(232,82,42,0.7)',borderRadius:6}]},options:cOpts});
-  charts.gan=new Chart(document.getElementById('chart-gan'),{type:'bar',data:{labels,datasets:[{label:'Ganancia $',data:ganxm,backgroundColor:'rgba(76,175,110,0.7)',borderRadius:6},{label:'Costo $',data:costoxm,backgroundColor:'rgba(232,80,64,0.5)',borderRadius:6}]},options:cOpts});
-  charts.prod=new Chart(document.getElementById('chart-prod'),{type:'doughnut',data:{labels:Object.keys(prodMap).length?Object.keys(prodMap):['Sin datos'],datasets:[{data:Object.values(prodMap).length?Object.values(prodMap):[1],backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c9890',font:{size:11}}}}}});
+
+  charts.ventas=new Chart(document.getElementById('chart-ventas'),{type:'bar',data:{labels,datasets:[{label:'Facturación $',data:vxp,backgroundColor:'rgba(232,82,42,0.7)',borderRadius:6}]},options:cOpts});
+  charts.gan=new Chart(document.getElementById('chart-gan'),{type:'bar',data:{labels,datasets:[{label:'Ganancia $',data:ganxp,backgroundColor:'rgba(76,175,110,0.7)',borderRadius:6},{label:'Costo $',data:costoxp,backgroundColor:'rgba(232,80,64,0.5)',borderRadius:6}]},options:cOpts});
+  charts.prod=new Chart(document.getElementById('chart-prod'),{type:'doughnut',data:{labels:Object.keys(prodMap).length?Object.keys(prodMap):['Sin datos'],datasets:[{data:Object.values(prodMap).length?Object.values(prodMap):[1],backgroundColor:colors}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:legendColor,font:{size:11}}}}}});
   charts.cli=new Chart(document.getElementById('chart-cli'),{type:'bar',data:{labels:cliSorted.length?cliSorted.map(c=>c[0]):['Sin datos'],datasets:[{label:'Total $',data:cliSorted.length?cliSorted.map(c=>c[1]):[0],backgroundColor:'rgba(232,168,48,0.7)',borderRadius:6}]},options:{...cOpts,indexAxis:'y'}});
 }
 

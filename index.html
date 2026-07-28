@@ -345,6 +345,9 @@ textarea{resize:vertical}
   <!-- CLIENTES -->
   <div id="tab-clientes" class="section">
     <div class="page-header"><p class="page-title">Clientes</p><button class="btn btn-primary" onclick="openClienteModal()">+ Agregar cliente</button></div>
+    <div style="margin-bottom:1rem;position:relative">
+      <input type="text" id="cli-search" placeholder="🔍 Buscar cliente..." oninput="renderClientes()" style="margin-bottom:0;padding-left:14px">
+    </div>
     <div id="clientes-list"></div>
   </div>
 
@@ -1051,8 +1054,12 @@ async function eliminarCliente(id){
 }
 function renderClientes(){
   const el=document.getElementById('clientes-list');if(!el)return;
-  if(!clientes.length){el.innerHTML='<div class="empty"><div class="empty-icon">◉</div>Sin clientes</div>';return;}
-  el.innerHTML=clientes.map(c=>{
+  const q=(document.getElementById('cli-search')?.value||'').toLowerCase().trim();
+  const lista=[...clientes]
+    .filter(c=>!q||c.nombre.toLowerCase().includes(q)||(c.wa||'').includes(q)||(c.dir||'').toLowerCase().includes(q))
+    .sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'','es'));
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">◉</div>'+(q?'Sin resultados para "'+q+'"':'Sin clientes')+'</div>';return;}
+  el.innerHTML=lista.map(c=>{
     const ini=(c.nombre||'?').charAt(0).toUpperCase();
     const nv=ventas.filter(v=>v.cliente_id===c.id).length;
     return '<div class="client-card">'+
@@ -1258,8 +1265,7 @@ function renderCostos(){
   const el=document.getElementById('costos-grid');if(!el)return;
   const activos=productos.filter(p=>p.activo==1);
   if(!activos.length){el.innerHTML='<p style="color:var(--text3);font-size:13px">Sin productos activos</p>';return;}
-  el.innerHTML=activos.map(p=>{const co=costoMap[p.id]||{};const total=(co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0);return '<div class="card"><div class="card-title">'+(p.emoji||'🍕')+' '+p.nombre+'</div><div class="row-item"><span style="color:var(--text2);font-size:13px">Masa</span><span class="row-amount">'+fmt(co.masa)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Salsa</span><span class="row-amount">'+fmt(co.salsa)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Queso</span><span class="row-amount">'+fmt(co.queso)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Toppings</span><span class="row-amount">'+fmt(co.top)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Packaging</span><span class="row-amount">'+fmt(co.pack)+'</span></div><hr class="divider"><div class="row-item"><span style="font-weight:500">Costo total</span><span class="row-amount amount-red">'+(total?fmt(total):'—')+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Precio almacén</span><span class="row-amount amount-green">'+fmt(p.precio_alm)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Precio directo</span><span class="row-amount">'+fmt(p.precio_dir)+'</span></div><div class="row-item"><span style="font-weight:500">Ganancia almacén</span><span class="row-amount amount-green">'+(p.precio_alm&&total?fmt(p.precio_alm-total):'—')+'</span></div>'+
-'<div class="row-item" style="border-bottom:none"><span style="font-weight:500">Ganancia directa</span><span class="row-amount amount-green">'+(p.precio_dir&&total?fmt(p.precio_dir-total):'—')+'</span></div><button class="btn btn-full" style="margin-top:12px" onclick="editarCosto(\''+p.id+'\',\''+p.nombre+'\')">✎ Editar costos</button></div>';}).join('');
+  el.innerHTML=activos.map(p=>{const co=costoMap[p.id]||{};const total=(co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0);return '<div class="card"><div class="card-title">'+(p.emoji||'🍕')+' '+p.nombre+'</div><div class="row-item"><span style="color:var(--text2);font-size:13px">Masa</span><span class="row-amount">'+fmt(co.masa)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Salsa</span><span class="row-amount">'+fmt(co.salsa)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Queso</span><span class="row-amount">'+fmt(co.queso)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Toppings</span><span class="row-amount">'+fmt(co.top)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Packaging</span><span class="row-amount">'+fmt(co.pack)+'</span></div><hr class="divider"><div class="row-item"><span style="font-weight:500">Costo total</span><span class="row-amount amount-red">'+(total?fmt(total):'—')+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Precio almacén</span><span class="row-amount amount-green">'+fmt(p.precio_alm)+'</span></div><div class="row-item"><span style="color:var(--text2);font-size:13px">Precio directo</span><span class="row-amount">'+fmt(p.precio_dir)+'</span></div><div class="row-item"><span style="font-weight:500">Ganancia almacén</span><span class="row-amount amount-green">'+(p.precio_alm&&total?fmt(p.precio_alm-total):'—')+'</span></div><div class="row-item" style="border-bottom:none"><span style="font-weight:500">Ganancia directa</span><span class="row-amount amount-green">'+(p.precio_dir&&total?fmt(p.precio_dir-total):'—')+'</span></div><button class="btn btn-full" style="margin-top:12px" onclick="editarCosto(\''+p.id+'\',\''+p.nombre+'\')">✎ Editar costos</button></div>';}).join('');
 }
 function editarCosto(prodId,prodNom){
   const co=costoMap[prodId]||{};let m=document.getElementById('m-eco');

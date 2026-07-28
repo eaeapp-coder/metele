@@ -900,8 +900,96 @@ function renderPedidos(){
 function renderArchivo(){
   const el=document.getElementById('archivo-list');if(!el)return;
   const lunes=getLunes();
-  const anteriores=ventas.filter(v=>{if(!v.fecha)return false;return new Date(v.fecha+'T00:00:00')<lunes;});
-  el.innerHTML=anteriores.length?anteriores.map(buildPedidoRow).join(''):'<div class="empty"><div class="empty-icon">📂</div>Sin pedidos anteriores</div>';
+  const anteriores=ventas.filter(v=>{
+    if(!v.fecha)return false;
+    return new Date(v.fecha+'T00:00:00')<lunes;
+  });
+  if(!anteriores.length){el.innerHTML='<div class="empty"><div class="empty-icon">📂</div>Sin pedidos anteriores</div>';return;}
+
+  // Group by week (Mon-Sun)
+  function getLunesDeF(fecha){
+    const d=new Date(fecha+'T00:00:00');
+    const dia=d.getDay();
+    const diff=dia===0?-6:1-dia;
+    const l=new Date(d);l.setDate(d.getDate()+diff);l.setHours(0,0,0,0);
+    return l;
+  }
+  function fmtFecha(d){return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();}
+
+  // Build week map
+  const weekMap={};
+  anteriores.forEach(v=>{
+    const l=getLunesDeF(v.fecha);
+    const key=l.toISOString().split('T')[0];
+    if(!weekMap[key]){
+      const dom=new Date(l);dom.setDate(l.getDate()+6);
+      weekMap[key]={lunes:l,domingo:dom,label:fmtFecha(l)+' — '+fmtFecha(dom),pedidos:[]};
+    }
+    weekMap[key].pedidos.push(v);
+  });
+
+  // Sort weeks descending (newest first)
+  const weeks=Object.values(weekMap).sort((a,b)=>b.lunes-a.lunes);
+
+  el.innerHTML=weeks.map(w=>{
+    // calc week totals
+    const totalFact=w.pedidos.reduce((a,v)=>a+(v.total||0),0);
+    const totalUnits=w.pedidos.reduce((a,v)=>{
+      const items=v.items||[{cantidad:v.cantidad}];
+      return a+items.reduce((b,it)=>b+(it.cantidad||0),0);
+    },0);
+    const totalCosto=w.pedidos.reduce((a,v)=>{
+      const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad}];
+      return a+items.reduce((b,it)=>{
+        const co=costoMap[it.producto_id]||{};
+        return b+((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0);
+      },0);
+    },0);
+    const totalGan=w.pedidos.reduce((a,v)=>{
+      const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad,precio:v.precio}];
+      return a+items.reduce((b,it)=>{
+        const co=costoMap[it.producto_id]||{};
+        const ct=((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0);
+        return b+((it.precio||0)*(it.cantidad||0))-ct;
+      },0);
+    },0);
+
+    const pedidosHtml=w.pedidos
+      .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''))
+      .map(buildPedidoRow).join('');
+
+    return '<div style="margin-bottom:1.5rem">'+
+      // Week header
+      '<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:10px">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">'+
+          '<div>'+
+            '<div style="font-weight:600;font-size:14px">📅 Semana '+w.label+'</div>'+
+            '<div style="font-size:12px;color:var(--text2);margin-top:2px">'+w.pedidos.length+' pedido'+(w.pedidos.length!==1?'s':'')+' · '+totalUnits+' pizza'+(totalUnits!==1?'s':'')+'</div>'+
+          '</div>'+
+          '<div style="text-align:right">'+
+            '<div style="font-size:16px;font-weight:600;font-family:DM Mono,monospace">$'+totalFact.toLocaleString('es-AR')+'</div>'+
+            '<div style="font-size:11px;color:var(--text2)">facturado</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
+          '<div style="background:var(--bg2);border-radius:var(--radius);padding:8px 10px;text-align:center">'+
+            '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">Costo</div>'+
+            '<div style="font-size:13px;font-weight:600;color:var(--red);font-family:DM Mono,monospace">$'+Math.round(totalCosto).toLocaleString('es-AR')+'</div>'+
+          '</div>'+
+          '<div style="background:var(--bg2);border-radius:var(--radius);padding:8px 10px;text-align:center">'+
+            '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">Ganancia</div>'+
+            '<div style="font-size:13px;font-weight:600;color:var(--green);font-family:DM Mono,monospace">$'+Math.round(totalGan).toLocaleString('es-AR')+'</div>'+
+          '</div>'+
+          '<div style="background:var(--bg2);border-radius:var(--radius);padding:8px 10px;text-align:center">'+
+            '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">Pizzas</div>'+
+            '<div style="font-size:13px;font-weight:600;font-family:DM Mono,monospace">'+totalUnits+'</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      // Pedidos of the week
+      '<div class="card" style="padding:0.75rem 1rem">'+pedidosHtml+'</div>'+
+    '</div>';
+  }).join('');
 }
 
 function renderEntregasPendientes(){

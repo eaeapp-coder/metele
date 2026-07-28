@@ -136,6 +136,11 @@ textarea{resize:vertical}
 [data-theme="light"] .burger-menu{box-shadow:-4px 0 20px rgba(0,0,0,.15)}
 [data-theme="light"] .modal{box-shadow:0 8px 32px rgba(0,0,0,.15)}
 [data-theme="light"] .toast{box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.cli-opt{padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.cli-opt:last-child{border-bottom:none}
+.cli-opt:hover,.cli-opt.selected{background:var(--bg3)}
+.cli-opt .cli-opt-name{font-weight:500}
+.cli-opt .cli-opt-sub{font-size:12px;color:var(--text2);margin-top:1px}
 .stats-filter-btn{padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s}
 .stats-filter-btn:hover{background:#2a2927;color:var(--text)}
 .stats-filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
@@ -485,7 +490,14 @@ textarea{resize:vertical}
       <button class="btn btn-primary btn-sm" id="btn-qc" onclick="quickAddCliente()">Crear y seleccionar</button>
       <button class="btn btn-sm" onclick="toggleQuickForm()" style="margin-left:6px">Cancelar</button>
     </div>
-    <select id="v-cli" style="margin-bottom:12px"></select>
+    <div style="position:relative;margin-bottom:12px" id="cli-dropdown-wrap">
+      <input type="text" id="cli-search-input" placeholder="🔍 Buscar cliente..." 
+        oninput="filterCliDropdown()" onfocus="openCliDropdown()" 
+        autocomplete="off" style="margin-bottom:0;cursor:pointer">
+      <input type="hidden" id="v-cli">
+      <div id="cli-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);z-index:300;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+      </div>
+    </div>
     <label>Canal</label>
     <select id="v-canal" style="margin-bottom:12px"><option value="almacen">Almacén (reventa)</option><option value="directo">Cliente directo</option></select>
     <label>Estado de pago</label>
@@ -762,6 +774,55 @@ function notificarNuevoPedido(pedido){
   }catch(e){console.error('WA notify error:',e);}
 }
 
+
+// ── SEARCHABLE CLIENT DROPDOWN ────────────────────────────────
+function buildCliDropdown(q=''){
+  const dd = document.getElementById('cli-dropdown');
+  if(!dd) return;
+  const sorted = [...clientes].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'','es'));
+  const filtered = q ? sorted.filter(c=>c.nombre.toLowerCase().includes(q.toLowerCase())||(c.dir||'').toLowerCase().includes(q.toLowerCase())) : sorted;
+  if(!filtered.length){
+    dd.innerHTML='<div class="cli-opt"><div class="cli-opt-name" style="color:var(--text3)">Sin resultados</div></div>';
+    return;
+  }
+    dd.innerHTML = filtered.map(c=>{
+    const sub=(c.tipo==='almacen'?'Almacén':'Directo')+(c.dir?' · '+c.dir:'');
+    return '<div class="cli-opt" data-cli-id="'+c.id+'" data-cli-name="'+c.nombre.replace(/"/g,'&quot;')+'"><div class="cli-opt-name">'+c.nombre+'</div><div class="cli-opt-sub">'+sub+'</div></div>';
+  }).join('');
+  dd.querySelectorAll('.cli-opt').forEach(el=>{
+    el.addEventListener('click',()=>selectCli(el.dataset.cliId,el.dataset.cliName));
+  });
+}
+
+function openCliDropdown(){
+  const dd = document.getElementById('cli-dropdown');
+  if(dd){ dd.style.display='block'; buildCliDropdown(document.getElementById('cli-search-input')?.value||''); }
+}
+
+function closeCliDropdown(){
+  const dd = document.getElementById('cli-dropdown');
+  if(dd) dd.style.display='none';
+}
+
+function filterCliDropdown(){
+  const q = document.getElementById('cli-search-input')?.value||'';
+  buildCliDropdown(q);
+  document.getElementById('v-cli').value=''; // clear selection while typing
+}
+
+function selectCli(id, nombre){
+  document.getElementById('v-cli').value = id;
+  document.getElementById('cli-search-input').value = nombre;
+  closeCliDropdown();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e){
+  if(!document.getElementById('cli-dropdown-wrap')?.contains(e.target)){
+    closeCliDropdown();
+  }
+});
+
 async function init(){
   sync('warn','Conectando...');
   try{
@@ -879,13 +940,16 @@ function openPedidoModal(editId=null){
   document.getElementById('quick-form').classList.remove('open');
   document.getElementById('items-container').innerHTML='';
   itemCounter=0;
-  const sel=document.getElementById('v-cli');
-  sel.innerHTML='<option value="">Seleccionar cliente...</option>';
-  clientes.forEach(c=>sel.innerHTML+=`<option value="${c.id}">${c.nombre}</option>`);
+  // reset client dropdown
+  document.getElementById('v-cli').value='';
+  document.getElementById('cli-search-input').value='';
+  closeCliDropdown();
   if(!document.getElementById('v-fecha').value)document.getElementById('v-fecha').value=new Date().toISOString().split('T')[0];
   if(editId){
     const v=ventas.find(x=>x.id===editId);if(!v)return;
-    sel.value=v.cliente_id||'';
+    document.getElementById('v-cli').value=v.cliente_id||'';
+    const cliObj=clientes.find(c=>c.id===v.cliente_id);
+    if(cliObj)document.getElementById('cli-search-input').value=cliObj.nombre;
     document.getElementById('v-canal').value=v.canal||'almacen';
     document.getElementById('v-pago').value=v.pago||'pendiente';
     document.getElementById('v-fecha').value=v.fecha||'';
@@ -976,7 +1040,7 @@ async function quickAddCliente(){
     const d={nombre:nom,tipo:document.getElementById('qc-tipo').value,wa:document.getElementById('qc-wa').value.trim(),dir:document.getElementById('qc-dir').value.trim(),deuda:0,limite:0};
     const res=await sbPost('clientes',d);const nc=res[0]||{...d,id:'tmp-'+Date.now()};
     clientes.unshift(nc);
-    const sel=document.getElementById('v-cli');const opt=new Option(nc.nombre,nc.id,true,true);sel.insertBefore(opt,sel.firstChild);sel.value=nc.id;
+    selectCli(nc.id, nc.nombre);
     toggleQuickForm();['qc-nom','qc-wa','qc-dir'].forEach(i=>document.getElementById(i).value='');
     toast('✓ Cliente creado');
   }catch(e){toast('⚠ Error');console.error(e);}finally{busy('btn-qc',false,'Crear y seleccionar');}

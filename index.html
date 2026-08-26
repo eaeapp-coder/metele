@@ -152,22 +152,48 @@ textarea{resize:vertical}
   .mobile-header{display:flex}
   .burger-btn{display:inline-flex}
   .dash-metrics,.grid4,.grid2,.grid3{grid-template-columns:1fr!important}
-  .item-row-grid{grid-template-columns:1fr 60px 80px 32px;gap:6px}
-  .chart-wrap{height:180px}
-  .page-title{font-size:18px}
-  .metric-value{font-size:20px}
-  .modal{width:100%!important;max-width:100%!important;margin:0!important;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;max-height:90vh}
+  .item-row-grid{grid-template-columns:1fr 65px 90px 36px;gap:6px}
+  .chart-wrap{height:200px}
+  /* typography scale-up */
+  body{font-size:16px}
+  .page-title{font-size:22px}
+  .metric-value{font-size:26px}
+  .metric-label{font-size:13px}
+  .metric-sub{font-size:14px}
+  .row-name{font-size:16px}
+  .row-sub{font-size:14px}
+  .row-amount{font-size:16px}
+  .card-title{font-size:13px}
+  .tag{font-size:13px;padding:4px 10px}
+  .btn{font-size:15px;padding:11px 18px}
+  .btn-sm{font-size:13px;padding:8px 14px}
+  .btn-icon{padding:10px 14px;font-size:17px}
+  label{font-size:13px}
+  input,select,textarea{font-size:16px;padding:11px 14px} /* 16px prevents iOS zoom */
+  .nav-btn,.burger-nav-btn{font-size:16px;padding:13px 14px}
+  .modal-title{font-size:19px}
+  .logo-text,.mobile-logo{font-size:18px}
+  .row-item{padding:13px 0}
+  .client-card{padding:1.1rem 1.1rem}
+  /* modal */
+  .modal{width:100%!important;max-width:100%!important;margin:0!important;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;max-height:92vh}
   .modal-bg{align-items:flex-end;padding:0}
   .row-flex{flex-direction:column;gap:0}
   .saldo-box{flex-direction:column;align-items:flex-start}
   .sync-bar{display:none}
-  .card{padding:1rem}
-  .btn-icon{padding:8px 12px;font-size:15px}
-  .actions-row{gap:4px}
+  .card{padding:1.1rem}
+  .actions-row{gap:6px}
+  .empty{font-size:15px}
+  .empty-icon{font-size:3rem}
+  .pago-row{font-size:14px}
+  .mov-row .row-name{font-size:15px}
+  .item-total{font-size:13px}
+  .venta-total-bar{font-size:15px}
 }
 @media(max-width:400px){
-  .metric-value{font-size:17px}
-  .item-row-grid{grid-template-columns:1fr 55px 70px 28px}
+  .metric-value{font-size:22px}
+  .item-row-grid{grid-template-columns:1fr 58px 78px 32px}
+  input,select,textarea{font-size:16px}
 }
 </style>
 </head>

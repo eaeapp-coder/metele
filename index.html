@@ -245,9 +245,10 @@ textarea{resize:vertical}
       <p class="page-title">Panel de control</p>
       <button class="btn btn-primary" onclick="openPedidoModal()">+ Nuevo pedido</button>
     </div>
-    <div class="dash-metrics">
+    <div class="dash-metrics" style="grid-template-columns:repeat(6,1fr)">
       <div class="metric"><div class="metric-label">Pedidos del mes</div><div class="metric-value" id="d-ventas">$0</div><div class="metric-sub" id="d-vsub">0 pedidos</div></div>
       <div class="metric"><div class="metric-label">Pedidos esta semana</div><div class="metric-value" id="d-semana">$0</div><div class="metric-sub" id="d-semana-sub">0 pedidos</div></div>
+      <div class="metric"><div class="metric-label">Pizzas esta semana</div><div class="metric-value amount-green" id="d-units-semana">0</div><div class="metric-sub">unidades</div></div>
       <div class="metric"><div class="metric-label">Ganancia estimada</div><div class="metric-value" id="d-gan">$0</div><div class="metric-sub">este mes</div></div>
       <div class="metric"><div class="metric-label">Deuda total</div><div class="metric-value amount-red" id="d-deuda">$0</div><div class="metric-sub">de clientes</div></div>
       <div class="metric"><div class="metric-label">Por entregar</div><div class="metric-value amount-amber" id="d-pendientes">0</div><div class="metric-sub">pedidos</div></div>
@@ -1480,9 +1481,11 @@ function updateDashboard(){
   const td=ventas.reduce((a,v)=>{const s=(v.total||0)-(v.pagado||0);return a+(s>0?s:0);},0);
   const vs=ventas.filter(v=>esDeSemana(v));
   const tvs=vs.reduce((a,v)=>a+(v.total||0),0);
+  const unitsSemana=vs.reduce((a,v)=>{const items=v.items||[{cantidad:v.cantidad}];return a+items.reduce((b,it)=>b+(it.cantidad||0),0);},0);
   const gan=vm.reduce((a,v)=>{const items=v.items||[{producto_id:v.producto_id,cantidad:v.cantidad,precio:v.precio}];return a+items.reduce((b,it)=>{const co=costoMap[it.producto_id]||{};const ct=((co.masa||0)+(co.salsa||0)+(co.queso||0)+(co.top||0)+(co.pack||0))*(it.cantidad||0);return b+((it.precio||0)*(it.cantidad||0)-ct);},0);},0);
   setEl('d-ventas','$'+tv.toLocaleString('es-AR'));setEl('d-vsub',vm.length+' pedidos este mes');
   setEl('d-semana','$'+tvs.toLocaleString('es-AR'));setEl('d-semana-sub',vs.length+' pedidos esta semana');
+  setEl('d-units-semana',unitsSemana);
   setEl('d-gan','$'+Math.round(gan).toLocaleString('es-AR'));
   setEl('d-deuda','$'+td.toLocaleString('es-AR'));
   const al=ventas.filter(v=>(v.total||0)>(v.pagado||0)).reduce((map,v)=>{map[v.cliente_nombre]=(map[v.cliente_nombre]||0)+((v.total||0)-(v.pagado||0));return map;},{});
